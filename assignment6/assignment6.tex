@@ -1,0 +1,299 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{arydshln} % dash line package for matrices
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+
+\title{Frequency Response of Discretization Rules}
+\author{Assignment 6}
+\date{Due: 2021/03/22}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 6 \\ Frequency Response of Discretization Rules}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+
+In order to gain insight into the behaviour of different discretization methods, this assignment analyzes the frequency response of a discretized inductor to observe the magnitude and phase effects across a frequency sweep. A frequency-dependent circuit equivalent in terms of $L_e$ and $R_e$ is obtained from the frequency-dependent admittance, which is derived in this assignment. The continuous solution is used as a baseline comparison; a ratio between it and the discretized solution allows us to obtain a measure of how the discretized solution deviates from the true solution.
+
+\section{Setup}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1.5in]{inductor.png}
+  \caption{Voltage and current relationship of an inductor}
+  \label{inductor}
+\end{figure}
+
+Shown in Figure \ref{inductor} is the circuit representation of an inductor, a fundamental electrical component which stores its energy in a magnetic field formed by the geometry and material of the conductor that forms it. As a result, it resists changes in current flowing through it, giving it a kind of momentum. Conversely, the magnetic field it forms cannot instantaneously collapse. The relationship of the current flowing through it and the voltage across its terminals is as follows:
+
+\begin{alignat}{2}
+  v_L(t) = L\cdot{}\frac{di_L}{dt} 
+\end{alignat}
+
+We see that voltage is a result of a differentiation of the current passing through the inductor multiplied by a constant L, the inductance in units of Henries. If we rearrange the equation so that $v_L(t)$ is the input, we get the following relationship:
+
+\begin{alignat}{2}
+  i_L(t) = \frac{1}{L}\cdot{}\int{v_L(t)dt}
+\end{alignat}
+
+Now we see that if voltage is the input, the current passing through it is a result of the integration of the voltage multiplied by the reciprocal of the inductance.
+
+These relationships show that the voltage and current of an inductor form a simple first-order system which we can represent with an input, an output, and some kind of operation in between. This is demonstrated in Figure \ref{linear-system}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{linear-system.png}
+  \caption{Frequency response of a linear system}
+  \label{linear-system}
+\end{figure}
+
+In order to get a system's frequency response, we can take the linear system into the frequency domain where the first-order system becomes a transfer function $H(s)$. Since we are in the frequency domain, by assuming a single frequency input into the system, we know that the output will be some transfer function $H(s)$ multiplied by the input. In the case of the inductor where the voltage is the input, the system becomes an integrator as shown in Figure \ref{integrator}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{integrator.png}
+  \caption{Frequency response of an integrator}
+  \label{integrator}
+\end{figure}
+
+The transfer function in the frequency domain becomes the admittance, as admittance times voltage equals current. Similarly, in the frequency domain, the differential relationship of current and voltage across the inductor (where the current is differentiated with respect to time times the inductance), the transfer function becomes impedance. This relationship is shown in Figure \ref{differentiator}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{differentiator.png}
+  \caption{Frequency response of a differentiator}
+  \label{differentiator}
+\end{figure}
+
+For this assignment, both transfer functions must be considered, as the discretizations used by the approximations use one or the other. Specifically, the assignment compares the following four discretizations of the inductor's current-voltage relationship:
+
+\begin{itemize}
+  \item Trapezoidal (Integration Approximation): 
+  \item Backward Euler (Integration Approximation): 
+  \item Forward Euler (Integration Approximation): 
+  \item Gear's 2\textsuperscript{nd} Order (Differentiation Approximation): 
+\end{itemize}
+
+Trapezoidal, backward Euler, and forward Euler all approximate the integration of voltage to obtain the current. This yields a frequency-dependent admittance. Gear's 2\textsuperscript{nd} order, on the other hand, approximates the derivative performed on the current to obtain the resulting voltage. This yields a frequency-dependent impedance. For the purpose of comparison when plotting the magnitude and phase distortions, Gear's 2\textsuperscript{nd} order frequency-dependent impedance is inverted to yield the admittance.
+
+The following sections will go over the frequency-domain equivalent circuits that the frequency-dependent admittance and impedance represent. A plot of the magnitude and phase distortions in comparison to the true answer is also generated. Finally, the results are discussed.
+
+\section{Results}
+
+\subsection{Trapezoidal Discretization}
+
+The frequency response of the trapezoidal discretization is one of two equivalent circuits that are already provided in the class notes. Its frequency-domain equivalent circuit is shown in Figure \ref{trapezoidal-circuit}, which consists of a single frequency-dependent inductor $L_e(\omega{})$.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{single-le.png}
+  \caption{Frequency domain equivalent circuit of trapezoidal discretization}
+  \label{trapezoidal-circuit}
+\end{figure}
+
+The derivation of the frequency-dependent admittance $Y_e{}(\omega{})$ is shown below:
+
+\begin{alignat}{2}
+i(t) - i(t-\Delta{}t) &= \frac{\Delta{}t}{2L}v(t) + \frac{\Delta{}t}{2L}v(t - \Delta{}t) \\
+input:\;v(t) &= e^{j\omega{}t} \\
+output:\;i(t) &= Y_e{}(\omega)e^{j\omega{}t} & (I = VY)\\
+Y_e{}(\omega)e^{j\omega{}t} - Y_e{}(\omega)e^{j\omega{}(t-\Delta{}t)} &= \frac{\Delta{}t}{2L}e^{j\omega{}t} + \frac{\Delta{}t}{2L}e^{j\omega{}(t-\Delta{}t)} \\
+\Aboxed{Y_e{}(\omega) &= \frac{\Delta{}t}{2L}\frac{e^{j\omega{}t} + 1}{e^{j\omega{}t} - 1}}
+\end{alignat}
+
+With some algebraic manipulation and an application of Euler's identity, we can get $Y_e{}(\omega)$ into its impedance $Z_e{}(\omega)$ and subsequently its circuit equivalent component:
+
+\begin{alignat}{2}
+Z_e{}(\omega) &= \frac{1}{Y_e{}(\omega)} \\
+Z_e{}(\omega) &= \frac{2L}{\Delta{}t}j\tan\left(\frac{\omega{}\Delta{}t}{2}\right) \\
+\Aboxed{Z_e{}(\omega) &= j\omega{}L_e{}(\omega)} \\
+\Aboxed{L_e{}(\omega) &= L\frac{\tan(\frac{\omega{}\Delta{}t}{2})}{\frac{\omega{}\Delta{}t}{2}}}
+\end{alignat}
+
+\subsection{Backward Euler Discretization}
+
+The frequency response of the backward Euler discretization is the second of two equivalent circuits that are already provided in the class notes. Its frequency-domain equivalent circuit is shown in Figure \ref{back-euler-circuit}, which consists of a constant resistance $R_e$ and a frequency-dependent inductor $L_e(\omega{})$ in a parallel configuration. This is due to the transfer function being represented as an admittance, which means the relationship that it forms is the reciprocal addition of $R_e$ and $L_e(\omega{})$. The equivalent impedance would therefore be equivalent to the two components in parallel.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{parallel-re-le.png}
+  \caption{Frequency domain equivalent circuit of backward Euler discretization}
+  \label{back-euler-circuit}
+\end{figure}
+
+The derivation of the frequency-dependent admittance $Y_e{}(\omega{})$ is shown below:
+
+\begin{alignat}{2}
+i(t) - i(t - \Delta{}t) &= \frac{\Delta{}t}{L}v(t) \\
+input:\;v(t) &= e^{j\omega{}t} \\
+output:\;i(t) &= Y_e{}(\omega)e^{j\omega{}t} & (I = VY)\\
+Y_e{}(\omega{})e^{j\omega{}t} - Y_e{}(\omega{})e^{j\omega{}(t-\Delta{}t)} &= \frac{\Delta{}t}{L}e^{j\omega{}t}\\
+\Aboxed{Y_e{}(\omega{}) &= \frac{\Delta{}t}{L}\frac{e^{j\omega{}\Delta{}t}}{e^{j\omega{}\Delta{}t} - 1}}
+\end{alignat}
+
+With some algebraic manipulation and an application of Euler's identity, we can get $Y_e{}(\omega)$ into its impedance $Z_e{}(\omega)$ and subsequently its circuit equivalent components:
+
+\begin{alignat}{2}
+Y_e{}(\omega) &= \frac{\Delta{}t}{2L} + \frac{\Delta{}t}{2L}\frac{1}{j\tan(\frac{\omega{}\Delta{}t}{2})} \\
+Y_e{}(\omega) &= \frac{1}{R_e} + \frac{1}{j\omega{}L_e(\omega{})} \\
+Z_e{}(\omega) &= \frac{1}{Y_e{}(\omega)} = \frac{1}{\frac{1}{R_e} + \frac{1}{j\omega{}L_e(\omega{})}}\\
+\Aboxed{Z_e{}(\omega) &= R_e || j\omega{}L_e{}(\omega{})} \\
+\Aboxed{R_e &= \frac{2L}{\Delta{}t}} \\
+\Aboxed{L_e(\omega) &= L\frac{\tan(\frac{\omega{}\Delta{}t}{2})}{\frac{\omega{}\Delta{}t}{2}}}
+\end{alignat}
+
+\subsection{Forward Euler Discretization}
+
+The frequency response of the forward Euler discretization is the first of two equivalent circuits that must be derived by hand. Its frequency-domain equivalent circuit is shown in Figure \ref{forward-euler-circuit}, which consists of a constant resistance $R_e$ and a frequency-dependent inductor $L_e(\omega{})$ in a parallel configuration. Note that this is identical to the frequency-domain circuit representation of the backward Euler discretization. However, as the derivation will show, the value for $R_e$ is now negative.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=3in]{parallel-re-le.png}
+  \caption{Frequency domain equivalent circuit of forward Euler discretization}
+  \label{forward-euler-circuit}
+\end{figure}
+
+The derivation of the frequency-dependent admittance $Y_e{}(\omega{})$ is shown below:
+
+\begin{alignat}{2}
+\int_{t-\Delta{}t}^{t}v(t)dt &= L\left[i(t) - i(t-\Delta{}t)\right] \\
+\int_{t-\Delta{}t}^{t}v(t)dt &\simeq v(t-\Delta{}t)\Delta{}t \\
+v(t-\Delta{}t)\frac{\Delta{}t}{L} &= i(t) - i(t-\Delta{}t) \\
+input:\;v(t) &= e^{j\omega{}t} \\
+output:\;i(t) &= Y_e{}(\omega)e^{j\omega{}t} & (I = VY)\\
+\frac{\Delta{}t}{L}e^{j\omega{}(t-\Delta{}t)} &= Y_e{}(\omega)e^{j\omega{}t} - Y_e{}(\omega)e^{j\omega{}(t-\Delta{}t)} \\
+Y_e{}(\omega)&=\frac{\Delta{}t}{L}\frac{e^{j\omega{}(t-\Delta{}t)}}{e^{j\omega{}t}-e^{j\omega{}(t-\Delta{}t)}} \\
+\Aboxed{Y_e{}(\omega)&=\frac{\Delta{}t}{L}\frac{1}{e^{j\omega{}\Delta{}t}-1}}
+\end{alignat}
+
+With some algebraic manipulation and an application of Euler's identity, we can get $Y_e{}(\omega)$ into its impedance $Z_e{}(\omega)$ and subsequently its circuit equivalent components:
+
+\begin{alignat}{2}
+Y_e{}(\omega)&=\frac{\Delta{}t}{L}\frac{1}{e^{j\omega{}\Delta{}t}-1} \\
+Y_e{}(\omega)&=\frac{\Delta{}t}{L}\frac{e^{-j\frac{\omega{}\Delta{}t}{2}}}{e^{j\frac{\omega{}\Delta{}t}{2}}-e^{-j\frac{\omega{}\Delta{}t}{2}}} \\
+Y_e{}(\omega)&=\frac{\Delta{}t}{L}\frac{\cos(-\frac{\omega{}\Delta{}t}{2})=j\sin(-\frac{\omega{}\Delta{}t}{2})}{2j\sin(-\frac{\omega{}\Delta{}t}{2})} \\
+Y_e{}(\omega)&=\frac{\Delta{}t}{2L}\left[\frac{\cos(\frac{\omega{}\Delta{}t}{2})}{j\sin(\frac{\omega{}\Delta{}t}{2})}-\frac{j\sin(\frac{\omega{}\Delta{}t}{2})}{j\sin(\frac{\omega{}\Delta{}t}{2})}\right]\\
+Y_e{}(\omega)&=\frac{\Delta{}t}{2L}\left[\frac{1}{j\tan(\frac{\omega{}\Delta{}t}{2})}-1\right] \\
+Y_e{}(\omega) &= -\frac{\Delta{}t}{2L} + \frac{\Delta{}t}{2L}\frac{1}{j\tan(\frac{\omega{}\Delta{}t}{2})} \\
+Y_e{}(\omega) &= \frac{1}{R_e} + \frac{1}{j\omega{}L_e(\omega{})} \\
+Z_e{}(\omega) &= \frac{1}{Y_e{}(\omega)} = \frac{1}{\frac{1}{R_e} + \frac{1}{j\omega{}L_e(\omega{})}} \\
+\Aboxed{Z_e{}(\omega) &= R_e || j\omega{}L_e{}(\omega{})} \\
+\Aboxed{R_e &= -\frac{2L}{\Delta{}t}} \\
+\Aboxed{L_e(\omega) &= L\frac{\tan(\frac{\omega{}\Delta{}t}{2})}{\frac{\omega{}\Delta{}t}{2}}}
+\end{alignat}
+
+\subsection{Gear's Second Order Discretization}
+
+Finally, the frequency response of the Gear's second order discretization is the second of two equivalent circuits that must be derived by hand. Its frequency-domain circuit is shown in Figure \ref{gear-circuit}. Instead of being in parallel, the equivalent frequency-domain resistance and inductance are now in series. This is a result of the approximation performing a differentiation instead of an integration, which yields a transfer function representing a frequency-dependent impedance directly instead of a frequency-dependent admittance. As a result, the real and imaginary components of the impedance can be separated and their addition represented as a $R_e(\omega{})$ and $L_e(\omega{})$ attached in series. The derivation will show that the equivalent resistance now has a frequency dependence. Since it is a real value, however, it is still considered a resistance.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=2.25in]{series-re-le.png}
+  \caption{Frequency domain equivalent circuit of Gear's 2\textsuperscript{nd} order discretization}
+  \label{gear-circuit}
+\end{figure}
+
+The derivation of the frequency-dependent admittance $Y_e{}(\omega{})$ is shown below:
+
+\begin{alignat}{2}
+v(t) &= L\frac{di(t)}{dt} \\
+di(t) &\simeq \frac{3}{2}\left[i(t) - \frac{4}{3}i(t-\Delta{}t) + \frac{1}{3}i(t-2\Delta{}t)\right] \\
+\frac{\Delta{}t}{L}v(t) &= \frac{3}{2}\left[i(t) - \frac{4}{3}i(t-\Delta{}t) + \frac{1}{3}i(t-2\Delta{}t)\right] \\
+input:\;i(t) &= e^{j\omega{}t} \\
+output:\;v(t) &= Z_e{}(\omega)e^{j\omega{}t} & (V = IZ) \\
+\frac{\Delta{}t}{L}Z_e(\omega{})e^{j\omega{}t} &= \frac{3}{2}\left[e^{j\omega{}t} - \frac{4}{3}e^{j\omega{}(t-\Delta{}t)} + \frac{1}{3}e^{j\omega{}(t-2\Delta{}t)}\right] \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t}\frac{e^{j\omega{}t} - \frac{4}{3}e^{j\omega{}(t-\Delta{}t)} + \frac{1}{3}e^{j\omega{}(t-2\Delta{}t)}}{e^{j\omega{}t}} \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t}\left[1 - \frac{4}{3}e^{-j\omega{}\Delta{}t} + \frac{1}{3}e^{-j\omega{}2\Delta{}t}\right] &= \frac{L}{2\Delta{}t}(e^{-j\omega{}\Delta{}t} - 1)(e^{-j\omega{}\Delta{}t} - 3) \texttt{ hmmm...} \\
+Y_e(\omega{}) &= \frac{1}{Z_e(\omega{})} \\
+\Aboxed{Y_e(\omega{}) &= \frac{2\Delta{}t}{L}\frac{1}{e^{-j\omega{}2\Delta{}t} - 4e^{-j\omega{}\Delta{}t} + 3}}
+\end{alignat}
+
+With some algebraic manipulation and an application of Euler's identity, we can get $Y_e{}(\omega)$ into its impedance $Z_e{}(\omega)$ and subsequently its circuit equivalent components:
+
+\begin{alignat}{2}
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t}\left[1 - \frac{4}{3}e^{-j\omega{}\Delta{}t} + \frac{1}{3}e^{-j\omega{}2\Delta{}t}\right] \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t} - \frac{2L}{\Delta{}t}e^{-j\omega{}\Delta{}t} + \frac{L}{2\Delta{}t}e^{-j\omega{}2\Delta{}t} \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t} - \frac{2L}{\Delta{}t}\left[\cos(-\omega{}\Delta{}t) + j\sin(-\omega{}\Delta{}t)\right] + \frac{L}{2\Delta{}t}\left[\cos(-\omega{}2\Delta{}t) + j\sin(-\omega{}2\Delta{}t)\right] \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t} - \frac{2L}{\Delta{}t}\cos(\omega{}\Delta{}t) + j\frac{2L}{\Delta{}t}\sin(\omega{}\Delta{}t) + \frac{L}{2\Delta{}t}\cos(\omega{}2\Delta{}t) - j\frac{L}{2\Delta{}t}\sin(\omega{}2\Delta{}t) \\
+Z_e(\omega{}) &= \frac{3L}{2\Delta{}t} - \frac{2L}{\Delta{}t}\cos(\omega{}\Delta{}t) + \frac{L}{2\Delta{}t}\cos(\omega{}2\Delta{}t) + j\left[\frac{2L}{\Delta{}t}\sin(\omega{}\Delta{}t) - \frac{L}{2\Delta{}t}\sin(\omega{}2\Delta{}t)\right] \\
+\Aboxed{Z_e(\omega{}) &= R_e(\omega{}) + j\omega{}L_e(\omega{})} \\
+\Aboxed{R_e(\omega{}) &= \frac{L}{\Delta{}t}\left[\frac{3}{2}-2\cos(\omega{}\Delta{}t) + \frac{1}{2}\cos(\omega{}2\Delta{}t)\right]} \\
+\Aboxed{L_e(\omega{}) &= \frac{L}{\omega\Delta{}t}\left[2\sin(\omega{}\Delta{}t)-\frac{1}{2}\sin(\omega{}2\Delta{}t)\right]}
+\end{alignat}
+
+Unfortunately, a network where a non-frequency dependent equivelent resistance (where it is constant across all frequencies) was not found despite some trial and error. As shown in Equation 49, we can factor the impedance into what looks like two zeros, but no solution was found further than this. Similarly, the admittance $Y_e(\omega{})$ for Gear's second order cannot simplify due to the cosines having different magnitudes. By making an educated guess, we can assume that two zeros in an impedance transfer function with no poles means that the impedance would become infinite as frequency becomes infinite and have two distinct slopes. This implies that there is an impedance looking into the equivalent circuit that would cause this effect.
+
+\subsection{Plotting the Magnitude and Phase Distortions}
+
+In this section, we take all of the admittances calculated in the previous section and compare them against the continuous solution of an inductance, which is $\frac{1}{j\omega{}L}$. By plotting the discretized admittance over the true admittance, we can analyze how well the discretization is able to imitate the true solution. This relationship is shown below:
+
+\begin{alignat}{2}
+\frac{H_e(\omega{})}{H(\omega{})} &= \frac{Y_e(\omega{})}{Y(\omega{})}\Biggr|_{L=1}^{}
+\end{alignat}
+
+The frequency is swept from DC to the Nyquist frequency and the scale on the X-axis is converted into per-unit (p.u.). Since the Nyquist frequency is related to $\Delta{}t$ as $f_{Nyquist} = \frac{1}{2\Delta{}t}$ then the maximum value on the X-axis becomes 0.5. The resulting complex magnitude and angle are then plotted on two separate plots, yielding curves that represent distortion from the true answer for both quantities.
+
+The true inductance $L$ cancels out as it exists in both numerator and denominator. However, substituting the value with, say, 1 H, is sufficient for this exercise as well. An arbitrary value of 1 $\mu{}s$ was chosen as $\Delta{}t$ and the Nyquist frequency was calculated from it.
+
+\begin{figure}[H]
+  \begin{center}
+    \input{transfer_function_magnitude_and_phase_plot.pgf}
+  \end{center}
+  \caption{Discretization Magnitude Distortion and Phase Distortion vs. Frequency Plots}
+  \label{h_plots}
+\end{figure}
+
+\newpage
+\section{Conclusion}
+\begin{itemize}
+    \item For trapezoidal discretization, we note that the equivalent frequency-domain inductance value contains a $\tan(\theta)$ function. The plot for this trigonometric function contains asymptotic behaviours at every $\theta = \pi n$. However, we note that $\theta$ remains within 0 and 0.25 if the frequency sweep only goes up to the Nyquist frequency. Within these bounds, the resulting equivalent impedance value is relatively stable.
+    \item For backward and forward Euler discretizations, we note that the equivalent frequency-domain inductance is identical and the equivalent frequency-domain resistance is the same constant, but with a different sign. They both yield a resistance and an inductance in parallel. At low frequencies, the impedance we see is a short and at high frequencies, the impedance we see is equivalent to $R_e$. The inductance $L_e(\omega)$ is identical to that of the trapezoidal discretization, and we've determined that for the frequency ranges we sweep for, its value is stable. For backward Euler, we only add in the denominator of the impedance. However, in forward Euler, it may be possible to obtain a value of 0 since the resistance is negative. This may imply that forward Euler is unstable when the real part of the reactance is approximately equal to the resistance as they will negate out to form a singularity.
+    \item For Gear's second order discretization, we note that the impedance is equivalent to some series combination of $R_e(\omega{})$ and $L_e(\omega{})$. This alone implies a fairly stable system as there is no asymptotic behaviours or singularities to worry about. Both $R_e(\omega{})$ and $L_e(\omega{})$ are bounded functions as $\omega$ approaches infinity, which implies decent numerical stability. According to the plots, Gear's second order provides the best performance in terms of both magnitude and phase distortion.
+    \item As noted earlier in the assignment, Gear's second order likely has a better solution than what is proposed in the assignment. Specifically, a value of resistance which does not change with frequency. It would be interesting to apply different frequency domain transformations, such as LaPlace, or different inputs, such as an impulse or a step function, to try to obtain the equivalent frequency domain circuit parameters. The impedance in factored form (Equation 49) seems like a step in the right direction.
+    \item Another exercise that would have yielded interesting results (as well as confirmed the analyses), is generating Bode plots of the frequency-domain impedance we obtain from each of the different discretizations. This might help obtain an equivalent circuit parameter by observing the effects of the slopes in the resulting plot.
+\end{itemize}
+
+\newpage
+\section{Code Listings and Data}
+
+\subsection{Python Code Listing}
+\label{code-listing-python}
+The following is the code written in Python to generate the plots used in this report.
+\lstinputlisting[language=Python]{assignment6.py}
+
+\end{document}
+

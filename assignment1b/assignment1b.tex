@@ -1,0 +1,117 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+% \usepackage{layouts}
+% \printinunitsof{in}\prntlen{\textwidth}
+\title{Basic Circuit Discretizations with PSCAD}
+\author{Assignment 1b}
+\date{Due: 2021/01/29}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 1b \\ Basic Circuit Discretizations with PSCAD}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+As a follow-up to the previous assignment, we now use a software suite known as PSCAD to simulate the same circuit as before. PSCAD is an electromagnetic transient simulator, allowing the user to model complex power systems and analyze their behaviour.
+
+\section{Setup}
+PSCAD provides a master library of components as well as primitives to help model the circuit. The "Single Phase Voltage Source Model" component was used as the source and it was made ideal by setting the source impedance to $0 \Omega{}$ with a ramp-up time of $0 s$ (instantaneous voltage). The ideal resistor and inductors were used to model the passive components and a multimeter was added to the top of the inductor. The multimeter's instantaneous current and voltage readings were connected to plots which were placed directly on the schematic sheet. Figure \ref{pscad-setup} illustrates how the PSCAD schematic sheet was set up for this assignment.
+
+Once all of the components were hooked together and instrumented, the build button was clicked. This generated a Fortran program that models the entire circuit. A listing of this program can be found in Section \ref{code-listing-fortran}.
+
+Clicking the run button ran the simulation and outputted the results on the plots. The data was extracted by right-clicking each plot to save it to the clipboard. It was then formatted and added to the Python program for plotting against the hand-derived approximations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{pscad.png}
+\caption{PSCAD schematic and resulting plots for $\Delta{}t = 100\mu{}s$ circuit analysis.}
+\label{pscad-setup}
+\end{figure}
+
+\section{Simulation}
+
+Recall that in assignment 1a, the following approximations were derived and plotted:
+
+\begin{enumerate}[label=\alph*)]
+  \item Using the trapezoidal rule with $\Delta{}t_1 = 0.1ms$
+  \item Using the backward Euler rule with $\Delta{}t_1 = 0.1ms$
+  \item Using the trapezoidal rule with $\Delta{}t_2 = 0.8ms$
+  \item Using the backward Euler rule with $\Delta{}t_2 = 0.8ms$
+\end{enumerate}
+
+In this assignment, we append the PSCAD solutions generated and compare it to the manually derived approximations on the same plots. Two sets of plots are generated, at time steps $\Delta{}t_1 = 0.1ms$ and $\Delta{}t_2 = 0.8ms$. The following two figures, \ref{approx_pscad_comp_0p0001} and \ref{approx_pscad_comp_0p0008}, show PSCAD compared to the manually derived approximations for these two time steps respectively.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{compare_plot_0p0001.pgf}
+    \end{center}
+    \caption{Comparison of Approximations and PSCAD at $\Delta{}t_1 = 0.1 ms$}
+    \label{approx_pscad_comp_0p0001}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{compare_plot_0p0008.pgf}
+    \end{center}
+    \caption{Comparison of Approximations and PSCAD at $\Delta{}t_2 = 0.8 ms$}
+    \label{approx_pscad_comp_0p0008}
+\end{figure}
+
+\section{Conclusion}
+PSCAD offers very similar performance to the manually derived approximations, but with a much easier interface. Much more complex circuits can be simulated in a fraction of the time it would take to manually derive the differential equations. The following observations were made about the results in this assignment.
+\begin{itemize}
+    \item At a time step of $\Delta{}t_1 = 0.1 ms$, all three solutions are almost indistinguishable from ideal at the plotted time scale, showing how a small time step improves the performance of all three techniques considerably.
+    \item The solutions for PSCAD are very close in shape and magnitude to the trapezoidal results that were generated in the previous assignment. This likely means that the underlying mechanism for simulation is likely similar to the trapezoidal approximation.
+    \item Conversely, PSCAD does not have the same shape as the backward Euler solution, so it's not likely this technique.
+    \item Interestingly enough, PSCAD appears to offer a more precise solution than the manually derived trapezoidal one for the same time step. Perhaps the time step used in PSCAD is different internally (e.g. slightly smaller than what is specified). Or, perhaps PSCAD makes different assumptions about the beginning of time of the circuit. In the PSCAD circuit, at $0^-s$ the voltage is 10 V and undefined in the manually derived equations (times before 0 are not taken into account). Perhaps this value is used somewhere in the PSCAD calculation that wasn't evident.
+
+\end{itemize}
+
+\newpage
+\section{Code Listings}
+
+\subsection{Python Code Listing}
+\label{code-listing-python}
+The following is the code written in Python to perform the calculations derived for this homework assignment as well as generate the plots used in this report. The argument parser was removed in this version due to the same parameters being used for every iteration. Also, the results from PSCAD were copy pasted directly into the Python source to keep things simple. The results are transposed to match the generated results from the manually derivated solutions.
+\lstinputlisting[language=Python]{assignment1b.py}
+
+\subsection{Fortran Code Listing}
+\label{code-listing-fortran}
+The following is the code generated by PSCAD to simulate the circuit for this assignment.
+\lstinputlisting[language=Fortran]{pscad.f}
+\end{document}
+

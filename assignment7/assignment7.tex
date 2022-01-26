@@ -1,0 +1,301 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{arydshln} % dash line package for matrices
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+
+\title{Numerical Oscillasations of Discretizations Rules}
+\author{Assignment 7}
+\date{Due: 2021/04/05}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 7 \\ Numerical Oscillasations of Discretizations Rules}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+
+In this assignment, we are investigating the response of different discretization rules to step and ramp inputs. We can observe interesting behaviours, such as numerical oscillations, by using these inputs. These stimuli represent a sudden change in value, which will generate distinct responses in different LTI systems. For this assignment, the response of the system gives us an idea of how stable the discretization rule is. The subject for this exercise is a lossless first order system in the form of a voltage source connected in series to a capacitor. At time $t=0$, a switch is closed and the voltage source applies its input to the system: the step or a ramp. The resulting current in the system is what we observe as the output, which provides us with the behaviour we wish to investigate and comment on.
+
+\section{Setup}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=1.5in]{capacitor.png}
+  \caption{Voltage and current relationship of a capacitor}
+  \label{capacitor}
+\end{figure}
+
+Shown in Figure \ref{capacitor} is the circuit representation of a capacitor, a fundamental electrical component which stores energy as electrical charge when a voltage is applied to it. This process is encouraged by the geometry of its conductive plates and the properties of the the dielectric sandwiched between them. As a result, it resists changes in voltage applied to it. The relationship of the current flowing through it and the voltage across its terminals is as follows:
+
+\begin{alignat}{2}
+  i_c(t) = C\frac{dv_c(t)}{dt} 
+\end{alignat}
+
+We see that current is a result of a differentiation of the voltage applied to the capacitor, multiplied by a constant C, the capacitance in units of Farads. When we discretize this relationship, our derivation is performed over a time step of $\Delta{}t$ instead of $dt$, so in a not so rigorous mathematical way, we can rearrange the formula as follows:
+
+\begin{alignat}{2}
+  i_c(t)\frac{dt}{C} &= dv_c(t) \\
+  i_c(t)\frac{\Delta{}t}{C} &\simeq dv_c(t) 
+\end{alignat}
+
+For discretizations which approximate the derivative, we will be using this relationship.
+
+If we rearrange the original capacitance equation so that $i_c(t)$ is the independent variable and $v_c(t)$ is the dependent variable, then we get the following relationship:
+
+\begin{alignat}{2}
+  v_c(t) = \frac{1}{C}\int{i_c(t)dt}
+\end{alignat}
+
+Now we see that if current is the input, the voltage across the capacitor's terminals is a result of the integration of the current passing through it multiplied by the reciprocal of the capacitance. We can discretize this integration by evaluating the integral over the interval of $t - \Delta{}t$ and $t$, which results in the following relationship:
+
+\begin{alignat}{2}
+  C\left[v_c(t)-v_c(t-\Delta{}t)\right] &= \int_{t-\Delta{}t}^{t}i_c(t)dt \\
+  C\left[v_c(t)-v_c(t-\Delta{}t)\right] &\simeq \text{approximated area of integration}
+\end{alignat}
+
+For discretization which approximates the integral, we will be using this relationship.
+
+The following sections demonstrate how each of the discretization rules have been used to approximate the response of an ideal capacitance. The trapezoidal, backward Euler, and forward Euler discretizations approximate an area (an integration), and Gear's second order approximates a derivative. The relationships found in Equations 3 and 6 will be used to evaluate the results in this assignment along with the respective discretization technique. A Z-transform is also performed in order to obtain the poles of the $z^{-1}$ transfer function in order to comment on the observed behaviour in the results.
+
+\subsection{Trapezoidal Derivation}
+
+The trapezoidal discretization approximates an integral through an area. The process of obtaining the current through a trapezoidal discretized capacitor is shown below.
+
+\begin{alignat}{2}
+  \text{approximated area of integration} &\simeq C\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  \text{trapezoidal area} &= \frac{i_c(t) + i_c(t-\Delta{}t)}{2} \\
+  \frac{i_c(t) + i_c(t-\Delta{}t)}{2} &= C\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  \Aboxed{i_c(t) &= \frac{2C}{\Delta{}t}v_c(t) - \frac{2C}{\Delta{}t}v_c(t-\Delta{}t) - i_c(t-\Delta{}t)}
+\end{alignat}
+
+A Z-transform can be applied to the discretized function to infer its behaviour. The derivation is shown below:
+
+\begin{alignat}{2}
+  i_c(t) &= \frac{2C}{\Delta{}t}v_c(t) - \frac{2C}{\Delta{}t}v_c(t-\Delta{}t) - i_c(t-\Delta{}t) \\
+  I_c(z) &= \frac{2C}{\Delta{}t}V_c(z) - \frac{2C}{\Delta{}t}z^{-1}V_c(z) - z^{-1}I_c(z) \\
+  I_c(z) + z^{-1}I_c(z) &= \frac{2C}{\Delta{}t}\left[V_c(z) - z^{-1}V_c(z)\right] \\
+  I_c(z)(1 + z^{-1}) &= \frac{2C}{\Delta{}t}V_c(z)(1 - z^{-1}) \\
+  \Aboxed{Y_c(z) &= \frac{I_c(z)}{V_c(z)} = \frac{2C}{\Delta{}t}\frac{(z - 1)}{(z + 1)}}
+\end{alignat}
+
+\subsection{Backward Euler Derivation}
+
+The backward Euler discretization approximates an integral through an area. The process of obtaining the current through a backward Euler discretized capacitor is shown below.
+
+\begin{alignat}{2}
+  \text{approximated area of integration} &\simeq C\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  \text{Backward Euler area} &= i_c(t)\Delta{}t \\
+  \Aboxed{i_c(t) &= \frac{C}{\Delta{}t}\left[v_c(t)-v_c(t-\Delta{}t)\right]}
+\end{alignat}
+
+A Z-transform can be applied to the discretized function to infer its behaviour. The derivation is shown below:
+
+\begin{alignat}{2}
+  i_c(t) &= \frac{C}{\Delta{}t}\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  I_c(z) &= \frac{C}{\Delta{}t}\left[V_c(z)-z^{-1}V_c(z)\right] \\
+  \Aboxed{Y_c(z) &= \frac{I_c(z)}{V_c(z)} = \frac{C}{\Delta{}t}\frac{(z - 1)}{z}}
+\end{alignat}
+
+\subsection{Forward Euler Derivation}
+
+The forward Euler discretization approximates an integral through an area. The process of obtaining the current through a forward Euler discretized capacitor is shown below. In order to get the function in terms of $i_c(t)$, we need to shift the function over $+\Delta{}t$ which results in the function looking forward to obtain its data.
+
+\begin{alignat}{2}
+  \text{approximated area of integration} &\simeq C\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  \text{Forward Euler area} &= i_c(t-\Delta{}t)\Delta{}t \\
+  i_c(t-\Delta{}t) &= \frac{C}{\Delta{}t}\left[v_c(t)-v_c(t-\Delta{}t)\right] \\
+  & \text{shift time }+\Delta{}t \\
+  \Aboxed{i_c(t) &= \frac{C}{\Delta{}t}\left[v_c(t+\Delta{}t)-v_c(t)\right]}
+\end{alignat}
+
+A Z-transform can be applied to the discretized function to infer its behaviour. The derivation is shown below:
+
+\begin{alignat}{2}
+  i_c(t) &= \frac{C}{\Delta{}t}\left[v_c(t+\Delta{}t)-v_c(t)\right] \\
+  I_c(z) &= \frac{C}{\Delta{}t}\left[zV_c(z) - V_c(z)\right] \\
+  I_c(z) &= \frac{C}{\Delta{}t}V_c(z)(z - 1) \\
+  \Aboxed{Y_c(z) &= \frac{I_c(z)}{V_c(z)} = \frac{C}{\Delta{}t}\frac{z(z - 1)}{z}}
+\end{alignat}
+
+\subsection{Gear's Second Order Derivation}
+
+\begin{alignat}{2}
+  dv_c(t) &\simeq i_c(t)\frac{\Delta{}t}{C} \\
+  \text{derivative approximation} &= \frac{3}{2}\left[v_c(t) - \frac{4}{3}v_c(t-\Delta{}t) + \frac{1}{3}v_c(t-2\Delta{}t)\right] \\
+  i_c(t)\frac{\Delta{}t}{C} &= \frac{3}{2}\left[v_c(t) - \frac{4}{3}v_c(t-\Delta{}t) + \frac{1}{3}v_c(t-2\Delta{}t)\right] \\
+  \Aboxed{i_c(t) &= \frac{3C}{2\Delta{}t}\left[v_c(t) - \frac{4}{3}v_c(t-\Delta{}t) + \frac{1}{3}v_c(t-2\Delta{}t)\right]}
+\end{alignat}
+
+A Z-transform can be applied to the discretized function to infer its behaviour. The derivation is shown below:
+
+\begin{alignat}{2}
+  i_c(t) &= \frac{3C}{2\Delta{}t}\left[v_c(t) - \frac{4}{3}v_c(t-\Delta{}t) + \frac{1}{3}v_c(t-2\Delta{}t)\right] \\
+  I_c(z) &= \frac{3C}{2\Delta{}t}\left[V_c(z) - \frac{4}{3}z^{-1}V_c(z) + \frac{1}{3}z^{-2}V_c(z)\right] \\
+  Y_c(z) &= \frac{I_c(z)}{V_c(z)} = \frac{3C}{2{}\Delta{}t}\frac{z^{2} - \frac{4}{3}z + \frac{1}{3}}{z^{2}} = \frac{3C}{2\Delta{}t}\frac{(z - 1)(z - \frac{1}{3})}{z^{2}} \\
+  \Aboxed{Y_c(z) &= \frac{I_c(z)}{V_c(z)} = \frac{3C}{2\Delta{}t}\frac{(z - 1)(z - \frac{1}{3})}{z^{2}}}
+\end{alignat}
+
+\subsection{Evaluating Voltage Stimuli}
+
+With all of our derivations in hand, we can now apply the step and ramp stimuli to a capacitor and observe the current response of the system. Shown in Figure \ref{circuit} is the circuit that is used for this assignment. It consists of a voltage source connected in series with a capacitor, which is discretized using the techniques outlined in the previous sections. A switch is used to close the circuit at $t=0$ which applies the voltage to the capacitor.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=2in]{assignment_circuit.png}
+  \caption{Circuit being evaluated in this assignment}
+  \label{circuit}
+\end{figure}
+
+Each of the different discretization functions were calculated step-by-step to obtain their solution using the help of a table. The results section provides both the voltage input function (step or ramp) alongside the current output response using the specific discretization method.
+
+In order to obtain the plots shown in this assignment, a Python script was written to generate the plots using values of 1 where a constant was required (e.g. $C$ or $\Delta{}t$) and the plot labels were modified to reflect their values in terms of $C$ and $\Delta{}t$ instead of a numerical value.
+
+\section{Results}
+
+The following section contains all of the plots required by the assignment. The assignment requests that the ramp input only be applied to the trapezoidal and backward Euler discretizations. Since the Python script made the generation of the plots an easy task, the ramp response was plotted for all discretization methods for completeness.
+
+\begin{figure}[H]
+  \begin{center}
+    \input{trapezoidal_step.pgf}
+  \end{center}
+  \caption{Capacitor Trapezoidal Discretization Step Response}
+  \label{trap_step}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{trapezoidal_ramp.pgf}
+  \end{center}
+  \caption{Capacitor Trapezoidal Discretization Ramp Response}
+  \label{trap_ramp}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{backward_euler_step.pgf}
+  \end{center}
+  \caption{Capacitor Backward Euler Discretization Step Response}
+  \label{back_step}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{backward_euler_ramp.pgf}
+  \end{center}
+  \caption{Capacitor Backward Euler Discretization Ramp Response}
+  \label{back_ramp}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{forward_euler_step.pgf}
+  \end{center}
+  \caption{Capacitor Forward Euler Discretization Step Response}
+  \label{forward_step}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{forward_euler_ramp.pgf}
+  \end{center}
+  \caption{Capacitor Forward Euler Discretization Ramp Response}
+  \label{forward_ramp}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{gears_second_order_step.pgf}
+  \end{center}
+  \caption{Capacitor Gear's Second Order Discretization Step Response}
+  \label{gear_step}
+\end{figure}
+
+\begin{figure}[H]
+  \begin{center}
+    \input{gears_second_order_ramp.pgf}
+  \end{center}
+  \caption{Capacitor Gear's Second Order Discretization Ramp Response}
+  \label{gear_ramp}
+\end{figure}
+
+\newpage
+\section{Discussion}
+
+The following section contains the discussion elements required by the assignment as well as additional conclusions drawn from the assignment.
+
+\begin{itemize}
+    \item Using the poles of the $z^{-1}$ transfer function, we can explain some of the observed behaviour of the step function to the approximation.
+    \begin{itemize}
+      \item Trapezoidal: $Y_c(z) = \frac{2C}{\Delta{}t}\frac{(z - 1)}{(z + 1)}$
+        \begin{itemize}
+          \item Pole at $-1$: stable integrator that will exhibit bounded oscillations at discontinuities
+          \item Zero at $1$: stable differentiator
+          \item We use trapezoidal as an integrator so we observe the poles of the transfer function. We observe that both the step and ramp response exhibit bounded oscillations. Both the step and ramp function represent discontinuities in the input of the system.
+        \end{itemize}
+      \item Backward Euler: $Y_c(z) = \frac{C}{\Delta{}t}\frac{(z - 1)}{z}$
+        \begin{itemize}
+          \item Pole at $0$: Stable integrator that is critically damped
+          \item Zero at $1$: Stable differentiator
+          \item We use backward Euler as an integrator so we observe the poles of the transfer function. We can confirm that the response is indeed critically damped as there is no overshoot in the response when a step is applies to the system.
+        \end{itemize}
+      \item Forward Euler: $Y_c(z) = \frac{C}{\Delta{}t}(z - 1) = \frac{C}{\Delta{}t}\frac{z(z - 1)}{z}$
+        \begin{itemize}
+          \item Pole at $0$: Stable integrator that is critically damped
+          \item Zeros at $0$ and $1$: Stable differentiator that is critically damped
+          \item We use forward Euler as an integrator so we observe the poles of the transfer function. We can confirm that the response is indeed critically damped as there is no overshoot in the response when a step is applies to the system.
+        \end{itemize}
+      \item Gear's Second Order: $Y_c(z) = \frac{3C}{2\Delta{}t}\frac{(z - 1)(z - \frac{1}{3})}{z^{2}}$
+        \begin{itemize}
+          \item Poles at $0$ and $0$: Stable integrator that is critically damped
+          \item Zeros at $1$ and $\frac{1}{3}$: Stable differentiator
+          \item We use Gear's as a differentiator so we want to look at the zeros of the transfer function. We observe that the both the step and ramp response of Gear's second order is underdamped but settles into a steady-state, which implies its stability. The zeros obtained in the z-transform confirm this.
+        \end{itemize}
+    \end{itemize}
+    \item Numerical oscillations were present in the trapezoidal discretization, which indicate that it may not be very suitable for use in simulations where sudden changes occur (such as a breaker opening). If an event like this is detected, the simulation should switch to a discretization method that will not oscillate, such as Backward or Forward Euler.
+    \item Gear's second order exhibits an oscillation that quickly dissipates, indicating an  underdamped response. It seems to settle into the correct steady-state within a $\Delta{}t$. It is feasible that this small oscillation could cause unintended behaviours in the circuit being simulated. It definitely isn't as pervasive as a trapezoidal discretization, so it would be a better choice for large changes than it.
+    \item An interesting thing to note is that the steady-state response to a ramp input observed in the discretizations all settle on the capacitance $C$ (trapezoidal averages to C). This technique of applying a constant voltage ramp to a capacitor such that the current drawn by it is constant is a method to extract the capacitance C ($C = I_{constant}\frac{\Delta{}t}{\Delta{}V}$).
+\end{itemize}
+
+% \newpage
+% \section{Code Listings and Data}
+
+% \subsection{Python Code Listing}
+% \label{code-listing-python}
+% The following is the code written in Python to generate the plots used in this report.
+% \lstinputlisting[language=Python]{assignment6.py}
+
+\end{document}
+

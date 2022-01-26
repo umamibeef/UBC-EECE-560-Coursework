@@ -1,0 +1,367 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{arydshln} % dash line package for matrices
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+% \usepackage{layouts}
+% \printinunitsof{in}\prntlen{\textwidth}
+\title{Transient Recovery Voltage (TRV) in Circuit Breakers with the CP-Line Model}
+\author{Assignment 3}
+\date{Due: 2021/02/26}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 3 \\ TRV in Circuit Breakers with the CP-Line Model}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+
+This assignment investigates the transient recovery voltage in circuit breakers of a shorted transmission line using a the constant parameter transmission line model. Specifically, the assignment implements Dommel/Bergeron transmission line model, a version of the constant parameter transmission line model which accounts for line resistances. This is to compare with the previous assignment's lumped circuit transmission line model. Just as in the previous assignment, this scenario has a short circuit occur at t = 0 s at the end of the transmission line and a breaker exists between the transmission line and the power source. By design, the breaker cannot chop current, so after it has been signaled to open (66.67 ms for this assignment), it waits for current to cross zero before opening. In practice, this would help minimize arcing. This behaviour is modeled in the program for the assignment as well as in PSCAD.
+
+This report will outline how the circuit was modeled and simulated and go over the resulting waveforms which are produced from both the custom computer program as well as PSCAD.
+
+\section{Setup}
+
+In order to provide some background to the results, the following sections outline the derivation of the solutions. Both the hand-implemented as well as the PSCAD solution have their own section. As provided by the assignment directives, the values used for the components are as follows:
+
+\begin{center}
+$\begin{array}{ccc}
+    R_1 = 3\,\Omega & L_1 = 350\,mH & C_1 = 10\,nF \\
+    R_{line} = 0.5\,\Omega/km & L_{line} = 1\,mH/km & C_{line} = 12\,nF/km \\
+    &line length = 100 km \\
+    &\Delta{}t = 10 \mu{}s
+\end{array}$
+\end{center}
+
+The same $\Delta{}t$ value is used from the previous assignment to allow for meaningful comparisons between the two. These values are substituted into the hand-implemented simulation into the solution equations and the PSCAD schematic in their respective locations, as the following sections will detail.
+
+\subsection{Hand-Implemented Simulation}
+
+As with the previous assignment, the nodes were numbered $V_1$ through $V_5$. These are translated back into the assignment's original node names to more clearly answer the assignment questions. Then, the L and C components were discretized into their respective resistance and voltage sources. Current source transformations were then performed on the L and C resistor/voltage source pairs to simplify nodal analysis of the circuit. The transmission line was then represented using the Dommel/Bergeron transmission model equivalent. Figure \ref{hand-setup} shows the breakdown of these steps into the final model consisting of resistances and current sources.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{schematic.png}
+\caption{The original circuit and the model used to simulate it using the Dommel/Bergeron transmission line model.}
+\label{hand-setup}
+\end{figure}
+
+The Dommel/Bergeron transmission model's resistances $Z_o$ are composed of the characteristic impedance $Z_c$ and a quarter of the total line resistance as follows:
+
+\begin{alignat}{2}
+Z_o = Z_c \cdot{} \frac{R_{line}\cdot{}linelength}{4}
+\end{alignat}
+
+Using trapezoidal discretization and a subsequent current source transformation, the following history current source equations were generated for each of the four current sources:
+
+\begin{alignat}{2}
+h_{23}(t) &= -\frac{2\,L_{1}\,i_{23}(t - \Delta{}t)+\Delta{}t\,v_{2}(t - \Delta{}t)-\Delta{}t\,v_{3}(t - \Delta{}t)}{2\,L_{1}}\\
+h_{30}(t) &= \frac{2\,C_{1}\,v_{3}(t - \Delta{}t)+\Delta{}t\,i_{30}(t - \Delta{}t)}{\Delta{}t}\\ 
+\end{alignat}
+
+However, the transmission line history current sources are slightly different, yielding the following equations. These are unique the the Dommel/Bergeron model, which augment the regular CP-Line equations by taking into account the line resistance. The equations were found in PSCAD's documentation, which outline how they implement the Dommel/Bergeron transmission line model in its program.
+
+\begin{alignat}{2}
+h_{40}(t) &= \frac{1 + H}{2}\left[-\frac{1}{Z_o}V_5(t-\tau) - H\cdot i_{50}(t-\tau)\right] + \frac{1 - H}{2}\left[-\frac{1}{Z_o}V_4(t-\tau) - H\cdot i_{40}(t-\tau)\right] \\ 
+h_{50}(t) &= \frac{1 + H}{2}\left[-\frac{1}{Z_o}V_4(t-\tau) - H\cdot i_{40}(t-\tau)\right] + \frac{1 - H}{2}\left[-\frac{1}{Z_o}V_5(t-\tau) - H\cdot i_{50}(t-\tau)\right]
+\end{alignat}
+
+where:
+
+\begin{alignat}{2}
+H &= \frac{Z_o + \frac{R_{line}}{4}}{Z_o - \frac{R_{line}}{4}}
+\end{alignat}
+
+What is important to note here is the fact that these equations rely on a time $\tau$ in the past instead of $\Delta{}t$. $\tau$ is the time it takes for the signal to propagate the length of the line and is calculated using the transmission line's velocity of propagation, $a$, as follows:
+
+\begin{alignat}{2}
+a &= \frac{1}{\sqrt{L_{line}\cdot{}C_{line}}}\,(m/s)\\
+\tau &= \frac{linelength}{a}\,(s)
+\end{alignat}
+
+Since $\tau$ isn't a multiple of $\Delta{}t$, it was necessary to interpolate the voltage and current values in the hand-implemented solution. In order to do this, a simple linear interpolation was performed at every step of the program. If history wasn't available, such as the very beginning of the simulation, then a value of 0 is returned from the interpolation function. The linear interpolation was performed as follows:
+
+\begin{alignat}{2}
+interpolated = y_0 + (t - t_0)\frac{y_1 - y_0}{t_1 - t_0}
+\end{alignat}
+
+Here $t$ is the time-stamp we want to interpolate at ($t - \tau$ at each time slice in this case) and $t_0, t_1$ are two times that are above and below $t - \tau$ that we currently have in our history with $y_0, y_1$ containing the voltage or current value at those times in our history.
+
+One thing to keep in mind with this hand-implemented simulation is the fact that the final nodal voltage is always 0 due to the transmission line being shorted. Therefore, the matrix does not need to include this node in the solution. By performing a source transformation on the right hand side of the transmission line, as shown in Figure \ref{source-transform}, we get a clearer picture of what the short circuit current should be, the opposite of the $i_{50}$ current we will be calculating at each time step.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{source_transform.png}
+\caption{The source transformation performed on the right-hand side of the transmission line model.}
+\label{source-transform}
+\end{figure}
+
+With the relationships outlined above, we can now form equations for the branch currents, which are required values for calculating the next nodal voltage values:
+
+\begin{alignat}{2}
+i_{23}(t) &= \frac{v_{23}(t)}{R_{23}} - h_{23}(t) \\
+i_{30}(t) &= \frac{v_{30}(t)}{R_{30}} - h_{30}(t) \\
+i_{40}(t) &= \frac{v_{40}(t)}{Z_o} - h_{40}(t) \\
+i_{50}(t) &= - h_{50}(t)
+\end{alignat}
+
+For this exercise, the convention used for currents leaving the node marks them as positive and currents entering the node marks them as negative. Therefore the resulting branch currents are the nodal voltage divided by the branch resistance, minus the discretized component current sources for all branch currents in this circuit. The last branch only has a short circuited current source, so there is no contribution from a resistance.
+
+Finally, we can now calculate the nodal voltage equations using some clever matrix manipulation taught in class. This technique subdivides the usual nodal analysis conductance matrix into four sections, with nodes connected to known voltage sources occupying the outside matrices $\mathbf{G_{AB}}$, $\mathbf{G_{BA}}$, and $\mathbf{G_{BB}}$. This allows us to perform the following operation to obtain our nodal voltage equation vector (note that in the previous assignment, $\mathbf{G_{AB}}$ in this equation was incorrectly labeled as $\mathbf{G_{AA}}$! This was only incorrect in the report and not the code).
+
+\begin{alignat}{2}
+\left[\mathbf{V_A(t)}\right] &= \left[\mathbf{G_{AA}}\right]^{-1}\left[\mathbf{h_A(t)}\right] - \left[\mathbf{G_{AA}}\right]^{-1}\left[\mathbf{G_{AB}}\right]\left[\mathbf{V_B(t)}\right]
+\end{alignat}
+
+Instead of creating two matrices like in the previous assignment, it was decided to use a breaker resistance instead, $R_{brk}$. This was done to simplify the hand-implemented simulation and to more closely emulate how PSCAD modeled the breaker. When the breaker is closed, the resistance $R_{brk}$ is $1\,n\Omega$ (very low, almost shorted), and when the breaker is opened, the resistance $R_{brk}$ is $1\,M\Omega$ (very high, almost open). This simplifies things by only requiring single conductance and current matrices for the entire analysis with a variable value for $R_{brk}$.
+
+\begin{alignat}{2}
+  \left[
+  \mathbf{G}\right] &= \left[
+      \begin{array}{c;{2pt/2pt}c}
+        \mathbf{G_{AA}} & \mathbf{G_{AB}} \\ \hdashline[2pt/2pt]
+        \mathbf{G_{BA}} & \mathbf{G_{BB}} 
+      \end{array}
+    \right] = \left[\begin{array}{ccc;{2pt/2pt}c} \frac{\Delta_{t}}{2\,L_{1}}+\frac{1}{R_{1}} & -\frac{\Delta_{t}}{2\,L_{1}} & 0 & -\frac{1}{R_{1}}\\ [6pt]
+    -\frac{\Delta_{t}}{2\,L_{1}} & \frac{2\,C_{1}}{\Delta_{t}}+\frac{\Delta_{t}}{2\,L_{1}}+\frac{1}{R_{brk}} & -\frac{1}{R_{brk}} & 0\\ [6pt]
+    0 & -\frac{1}{R_{brk}} & \frac{1}{\frac{R_{line}\cdot{}linelength}{4}+Z_c}+\frac{1}{R_{brk}} & 0\\ [6pt] \hdashline[2pt/2pt]
+    -\frac{1}{R_{1}} & 0 & 0 & \frac{1}{R_{1}} \end{array}\right]
+\end{alignat}
+
+\begin{alignat}{2}
+  \left[\mathbf{H}\right] &= \left[\begin{array}{c} \mathbf{H_{A}} \\ \hdashline[2pt/2pt] \mathbf{H_{B}} \end{array}\right] = \left[\begin{array}{c} h_{23}(t) \\ h_{30}(t) - h_{23}(t) \\ -h_{40}(t) \\ \hdashline[2pt/2pt] 0 \end{array}\right]
+\end{alignat}
+
+The resulting nodal voltage equations were generated using MATLAB to minimize algebraic errors; the equations used to generate the nodal voltage equations were saved into a MATLAB file which can be viewed in Listing \ref{code-listing-matlab}. The resulting equations were then ported to a Python script which is provided in Listing \ref{code-listing-python}. For each time step, first, an interpolation is performed to obtain values that are not in the history table. Specifically, values for $V_4$, $i_{40}$, and $i_{50}$ at $t - \tau$. The Python script then calculates the next nodal voltage value using all of the up to date values for the current time step. These values are then used to calculate the next branch currents. After calculating the branch currents, the Python script checks if the breaker should have activated and if so, checks if the breaker current has changed sign since the last iteration. If both of these conditions are true, the breaker opens, effectively avoiding chopping current, and the breaker resistance is made very large until the end of the simulation. This is repeated for every step $t = t + \Delta{}t$ until the $200 ms$ simulation time is reached. These results are plotted alongside the equivalent PSCAD solution for comparison using the Python matplotlib plotting library.
+
+\subsection{PSCAD Simulation}
+
+PSCAD provides a master library of components as well as primitives to help model the circuit. The resulting PSCAD circuit is shown in Figure \ref{pscad-setup}. The "Single Phase Voltage Source Model" component was used as the source and it was made ideal by setting the source impedance to $0 \Omega{}$ with a ramp-up time of $0 s$ (instantaneous voltage). The frequency was set to 60 Hz with a magnitude of $\frac{230}{\sqrt{2}}\,kV_{rms}$ and an offset of 90 degrees to match the assignment's voltage source equation of $230cos(377t)\,kV$. The Dommel/Bergeron model was placed using PSCAD's component wizard, with the values shown in Figure \ref{pscad-bergeron-settings}. The breaker's resistances were set to $1\,n\Omega$ and $1\,M\Omega$ for closed and open states to match the hand implementation and configured to not chop current.
+
+We tell the transmission model to interpolate travel time (as we have done in the hand-simulated portion of this assignment). We also specify the frequency of the line to be $60 Hz$ and its length to be $100 km$ with a single conductor. The line resistance is input in units of $\Omega{}/m$, the travel time is the inverse of the velocity of propagation in units of $s/m$, and the surge impedance is another word for the characteristic impedance of the line, $Z_c$. The ideal resistor, inductor, and capacitor were used to model the passive components and a series of voltmeters and ammeters were placed around the circuit to match the hand implemented solution. The voltage and current readings were piped to a plot on the same page as the schematic. In order to determine when PSCAD's breaker opened, the breaker's state variable was observed by plotting its value, and the resulting data is observed for a change that corresponds to an open state. The Python program plots both breaker opening times for the hand-implemented and PSCAD solutions (which turned out to be identical).
+
+Once all of the components were hooked together and instrumented, the build button was clicked. This generated a Fortran program that models the entire circuit. A listing of this program can be found in Section \ref{code-listing-fortran}.
+
+Clicking the run button ran the simulation and outputted the results on the plots. The data was extracted by right-clicking each plot{} to save it to the clipboard. This was then pasted into a CSV file for the Python program to read in as raw values.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{pscad_schematic.png}
+\caption{PSCAD schematic of the transmission line.}
+\label{pscad-setup}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{pscad_bergeron_model_settings.png}
+\caption{PSCAD parameters for Dommel/Bergeron transmission model.}
+\label{pscad-bergeron-settings}
+\end{figure}
+
+\section{Simulation}
+
+With the hand-implemented and PSCAD solutions complete, the results can then be simulated and compared. This assignment requests the following comparison plots along with a zoomed-in portion for analysis. The figures following contain all of the plots required for the assignment. Plots named simulation refer to the hand-modeled circuit and those named PSCAD refer to the PSCAD modeled circuit.
+
+\begin{enumerate}[label=\alph*)]
+  \item Plots of $V_{one}$, $V_{two}$, $V_{three}$ for the simulation and PSCAD (Figures \ref{nodal_v_plots}, \ref{nodal_v_plots_zoom_1}, and \ref{nodal_v_plots_zoom_2}).
+  \item Plots of $I_{four, ground}$ which represents the short-circuit current at the end of the transmission line (Figures \ref{short_circuit_i_plots}, \ref{short_circuit_i_plots_zoom_1}, and \ref{short_circuit_i_plots_zoom_2}).
+  \item Plots of $V_{two, three}$ which represents the voltage across the breaker (Figures \ref{breaker_v_plots} and \ref{breaker_v_plots_zoom}).
+\end{enumerate}
+
+Additionally, the assignment also requests that the PSCAD results from the second assignment and the third assignment (this one) be compared as well. To make the comparison, the following PSCAD plots are used from assignments 2 and 3.
+
+\begin{enumerate}[label=\alph*)]
+  \item Plots of $V_{one}$, $V_{two}$, $V_{three}$ for the simulation and PSCAD (Figure \ref{pscad_nodal_v_plots}).
+  \item Plots of $I_{four, ground}$ which represents the short-circuit current at the end of the transmission line (Figures \ref{pscad_short_circuit_i_plots}, \ref{pscad_short_circuit_i_plots_zoom_1}, and \ref{pscad_short_circuit_i_plots_zoom_2}).
+  \item Plots of $V_{two, three}$ which represents the voltage across the breaker (Figures \ref{pscad_breaker_v_plots} and \ref{pscad_breaker_v_plots_zoom}).
+\end{enumerate}
+
+A full discussion of the results can be found in the Conclusion section.
+
+\subsection{Hand-Implemented Simulation vs. PSCAD}
+
+In this section, we compare the hand-implemented simulation ($Simulation$) with the PSCAD results ($PSCAD$).
+
+\begin{figure}[H]
+    \begin{center}
+        \input{nodal_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{one}$, $V_{two}$, and $V_{three}$ nodal voltages}
+    \label{nodal_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{nodal_voltage_comparison_plots_zoom_1.pgf}
+    \end{center}
+    \caption{Plots of $V_{one}$, $V_{two}$, and $V_{three}$ nodal voltages (zoomed at breaker opening)}
+    \label{nodal_v_plots_zoom_1}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{nodal_voltage_comparison_plots_zoom_2.pgf}
+    \end{center}
+    \caption{Plots of $V_{one}$, $V_{two}$, and $V_{three}$ nodal voltages (zoomed at simulation start)}
+    \label{nodal_v_plots_zoom_2}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{breaker_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{two, three}$ breaker voltage}
+    \label{breaker_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{breaker_voltage_comparison_plots_zoom.pgf}
+    \end{center}
+    \caption{Zoomed plots of $V_{two, three}$ breaker voltage (zoomed at breaker opening)}
+    \label{breaker_v_plots_zoom}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{short_circuit_current_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $I_{four, ground}$ short circuit current}
+    \label{short_circuit_i_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{short_circuit_current_comparison_plots_zoom_1.pgf}
+    \end{center}
+    \caption{Zoomed plots of $I_{four, ground}$ short circuit current (zoomed at breaker opening)}
+    \label{short_circuit_i_plots_zoom_1}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{short_circuit_current_comparison_plots_zoom_2.pgf}
+    \end{center}
+    \caption{Zoomed plots of $I_{four, ground}$ short circuit current (zoomed at simulation start)}
+    \label{short_circuit_i_plots_zoom_2}
+\end{figure}
+
+\subsection{Assignment 2 PSCAD vs. Assignment 3 PSCAD}
+
+In this section, we compare the second assignment's PSCAD results ($PSCAD_2$) with the third assignment's PSCAD results ($PSCAD_3$).
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_nodal_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{one}$, $V_{two}$, and $V_{three}$ nodal voltages}
+    \label{pscad_nodal_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_short_circuit_current_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $I_{four, ground}$ short circuit current}
+    \label{pscad_short_circuit_i_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_short_circuit_current_comparison_plots_zoom_1.pgf}
+    \end{center}
+    \caption{Zoomed plots of $I_{four, ground}$ short circuit current (zoomed at breaker opening)}
+    \label{pscad_short_circuit_i_plots_zoom_1}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_short_circuit_current_comparison_plots_zoom_2.pgf}
+    \end{center}
+    \caption{Zoomed plots of $I_{four, ground}$ short circuit current (zoomed at simulation start)}
+    \label{pscad_short_circuit_i_plots_zoom_2}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_breaker_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{two, three}$ breaker voltage}
+    \label{pscad_breaker_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{pscad_breaker_voltage_comparison_plots_zoom.pgf}
+    \end{center}
+    \caption{Zoomed plots of $V_{two, three}$ breaker voltage (zoomed at breaker opening)}
+    \label{pscad_breaker_v_plots_zoom}
+\end{figure}
+
+\newpage
+\section{Conclusion}
+Overall, the hand-implemented solution matched the results generated by PSCAD, with some exceptions. The following are observations and comments from the results of this assignment.
+\begin{itemize}
+    \item After changing the hand-implemented simulation solution to use a breaker resistance instead of two separate matrices, the results match perfectly with the ones generated in PSCAD. The resistances were made identical in each implementation, causing the ringing on the waveform to attenuate at the same rate. Examining the zoomed in sections also reveal that there are no discernible differences between the two. This is evidence that the hand-simulation is performing the same calculations as PSCAD.
+    \item Preprocessing the matrices in MATLAB and using the resulting equations directly in Python has enabled very fast executions of the program. This has allowed iterations to be performed very quickly when implementing and debugging the programmed portions. This of course relies on the MATLAB equations and matrices to be correct.
+    \item What becomes more interesting is when we compare the PSCAD results from the second assignment to this third assignment. These assignments are modeling the same scenario but with two different transmission line models.
+    \begin{itemize}
+      \item The first obvious difference between the previous assignment and this assignment is the ringing that occurs across the breaker voltage. In the previous assignment, different values for the breaker's open and closed resistances were chosen compared to this assignment This caused the ringing to attenuate much quicker in the previous assignment compared to this one.
+      \item There are subtle differences between the previous assignment and this assignment. They can be observed at the very beginning of the simulation and when the breaker is opened. For example, when looking at the short circuit solution zoomed in at the beginning in Figure \ref{pscad_short_circuit_i_plots_zoom_2}, we see that assignment 3's solutions starts with a flat line - likely due to the interpolator returning 0 for values beyond our history table at the very beginning. We don't see this in assignment 2 because we only assume values for t = 0.
+      \item The other difference we can see between assignments 2 and 3 is how much sharper the transitions are in assignment 3 when the solution is unstable at the beginning and during breaker opening. Assignment 2's solution reacts with much more smoothness, almost as if it was filtered. This is evident in both Figures \ref{pscad_short_circuit_i_plots_zoom_1} and \ref{pscad_short_circuit_i_plots_zoom_2}, where we zoom into these active moments in the circuit's simulation.
+    \end{itemize}
+    \item Overall, it would appear that the two models settle into nearly identical solutions. An interesting experiment would be to see how much differently the two circuit behave with varying $\Delta{}t$s. Since $t - \tau$ was much larger than $\Delta{}t$ for this implementation of the assignment, a quick experiment was performed to see if rounding up to the nearest table value would make much of a difference and the waveforms were nearly identical. This is likely not possible if the $\Delta{}t$ is larger, however.
+    \item Given more time, further comparisons could have been made to see how differently a pure CP-Line model with no line resistance would have behaved. This would have simplified the equation quite a bit. Chances are that its result would be very similar. There is a trade-off to be decided by the engineer if the less accurate model is sufficient for the analysis at hand.
+\end{itemize}
+
+\newpage
+\section{Code Listings and Data}
+
+\subsection{Python Code Listing}
+\label{code-listing-python}
+The following is the code written in Python to perform the calculations derived for this homework assignment as well as generate the plots used in this report. The PSCAD results were saved into a CSV file which the Python script reads in at the start of the program.
+\lstinputlisting[language=Python]{assignment3.py}
+
+\subsection{MATLAB Code Listing}
+\label{code-listing-matlab}
+The following are the equations that were typed into MATLAB to generate the nodal voltage vector solution equations. MATLAB was instrumental in generating the equations the Python script would later use to calculate the iterative solution.
+\lstinputlisting[language=MATLAB]{equations.m}
+
+\subsection{Fortran Code Listing}
+\label{code-listing-fortran}
+The following is the code generated by PSCAD to simulate the circuit for this assignment.
+\lstinputlisting[language=Fortran]{pscad.f}
+\end{document}
+

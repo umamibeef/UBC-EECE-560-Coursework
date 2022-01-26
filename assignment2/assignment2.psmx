@@ -1,0 +1,46 @@
+<Meta name="assignment2">
+  <messagelist>
+    <message status="normal" label="build" groupid="100006">
+      <User scope="assignment2" name="Main" status="normal" link="1535434989" /><![CDATA[Generating network and source code 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment2\assignment2.gf46\Main.f'.]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100006"><![CDATA[Generating 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment2\assignment2.gf46\assignment2.map'.]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100014"><![CDATA[The total number of live nodes: 5]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100001"><![CDATA[Non-professional licenses are limited to a single, electrical subsystem. Subsystem splitting has been internally disabled for this simulation.]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="400000"><![CDATA[Time for Compile: 47ms  Make: 0ms]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100015"><![CDATA[Will execute (1): call C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100015"><![CDATA[Will execute (1): call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat"]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100015"><![CDATA[Will execute (2): make -f assignment2.mak]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100015"><![CDATA[Will execute (2): "C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment2\assignment2.gf46\assignment2.mak.bat"]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100005"><![CDATA[Creating EMTDC executable...]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="0"><![CDATA[C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment2\assignment2.gf46>call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat" ]]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="100012"><![CDATA[Linking objects and libraries into binary 'assignment2.exe']]></message>
+    <message status="normal" label="build" scope="assignment2" groupid="400000"><![CDATA[Solve Time = 15ms]]></message>
+  </messagelist>
+  <List classid="Settings" />
+  <ViewContext>
+    <Window defn="assignment2:Main" call="0" />
+  </ViewContext>
+  <List classid="View">
+    <View name="Main" zoomlevel="8" scrollx="87" scrolly="531" />
+  </List>
+  <Catalog count="0" />
+  <Output device="EMTDC" version="2010" date="2021/02/16" time="23:36:42.000000">
+    <Domain name="Time" unit="s" mult="0.0" skew="0.0">
+      <Sample rate="100000.0" end="20000" />
+    </Domain>
+    <List classid="Analog">
+      <Analog name="Main(0):V1" index="0" id="2077393781:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V2" index="1" id="1351821131:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V3" index="2" id="2099817128:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V34" index="3" id="1140114987:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V4" index="4" id="1417826742:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V5" index="5" id="2093761891:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Ishort" index="6" id="1100495081:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):I30" index="7" id="900760399:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):I20" index="8" id="182393764:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):I12" index="9" id="2019360864:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):BRK_STAT" index="10" id="1571189830:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Ibrk" index="11" id="1854830101:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+    </List>
+    <List classid="Digital" />
+  </Output>
+</Meta>

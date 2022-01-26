@@ -1,0 +1,8 @@
+! Input data for XY Characteristic
+!
+0.0 0.02
+0.1 0.02
+0.1001 4.444e-4
+1.0 4.444e-4
+ENDFILE:
+!

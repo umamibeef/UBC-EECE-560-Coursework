@@ -1,0 +1,170 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{arydshln} % dash line package for matrices
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+% \usepackage{layouts}
+% \printinunitsof{in}\prntlen{\textwidth}
+\title{Transmission Line Functions}
+\author{Assignment 4}
+\date{Due: 2021/03/05}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 4 \\ Transmission Line Functions}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+
+In this assignment, we examine a more realistic transmission line which takes into account the frequency dependence of its characteristic parameters. In the previous assignment, we assumed that wave propagation and characteristic impedance were constant for all frequencies. While this is a useful model to get a quick and general idea of how the transmission line will behave under certain conditions, it does not fully characterize the true behaviour that one would expect from a transmission line. In reality, both the characteristic impedance and the wave propagation characteristics are affected by the frequencies involved; in order to properly model these effects, one must have a transmission line's parameters as functions of frequency. This assignment is an exploration of these frequency dependent parameters.
+
+\section{Setup}
+
+For this assignment, a data file is provided, \emph{Data\_Assign04.txt}, which provides a value for each of the different transmission line parameters as a function of frequency. Two different current paths are provided for the transmission line frequency characteristics, Eigenmode 1, where the return conductor is the ground (zero sequence) and Eigenmode 2, where the return conductor is a normal conductor. The capacitance $C$ and the shunt conductance $G$ are assumed to be constant with frequency, and $G$ is a non-zero, but small value.
+
+From these values, the following plots are requested:
+
+\begin{itemize}
+  \item The characteristic impedance $Z_c(\omega)$ in \emph{magnitude} in units of $(\Omega{}/km)$ and \emph{phase angle} in units of $(radians)$ (Figure \ref{zc_plots})
+  \item The propagation function $e^{-\gamma{}(\omega{})l}$ in \emph{magnitude} (0.0 - 1.0) and \emph{phase angle}, where the angle of the function is monotonic and in units of $(radians)$ (Figures \ref{prop_func_plots}, \ref{prop_phase_plot})
+  \item The attenuation $\alpha{}(\omega{})$ in units of $(nepers/km)$ (Figure \ref{attenuation_plots})
+  \item The phase displacement $\beta{}(\omega{})$ in units of $(radians/km)$ (Figure \ref{phase_disp_plots})
+  \item The propagation speed $a(\omega{})$ in units of $(km/s)$ (Figure \ref{prop_speed_plots})
+\end{itemize}
+
+The data was converted to a CSV file and a Python script (found in Listing \ref{code-listing-python}) was written to parse through the data, calculate the required quantities, and generate plots to be used in this report. All values were kept in their existing unit per km quantities, but were scaled to remove any prefix. Specifically, capacitance was converted from $\mu{}F$ to $F$ and inductance was converted from $mH$ to $H$.
+
+For the characteristic impedance $Z_c(\omega)$, the following equation was used:
+
+\begin{alignat}{2}
+Z_c(\omega) &= \sqrt{\frac{R(\omega{}) + j\omega{}L(\omega{})}{G(\omega{}) + j\omega{}C(\omega{})}}
+\end{alignat}
+
+As mentioned previously, the values for $C$ and $G$ are considered constant for all frequencies. The resulting complex number's polar representation was plotted for both its magnitude and phase.
+
+The following equation is used for the propagation function:
+
+\begin{alignat}{2}
+e^{-\gamma{}(\omega{})l} &= e^{-\alpha{}(\omega{})l}\cdot{}e^{-j\beta{}(\omega{})l}
+\end{alignat}
+
+where
+
+\begin{alignat}{2}
+\gamma{}(\omega{}) &= \sqrt{\left[R(\omega{})+j\omega{}L(\omega{})\right]\left[G(\omega{})+j\omega{}C(\omega{})\right]} = \alpha(\omega{}) + j\beta(\omega{})
+\end{alignat}
+
+The propagation function was a little trickier because using the resulting complex number's angle meant that the result would always be within the range of $(-\pi,\pi)$. The resulting phase plot would then be non-monotonic. Instead, one can simple represent the phase as $-\beta{}(\omega{})l$, which is the phase displacement in units of $(radians/km)$ multiplied by the line length of 300 in units of $(km)$ giving us the phase in $(radians)$. The magnitude of the propagation function is simply the magnitude of the resulting complex number.
+
+The attenuation $\alpha{}(\omega{})$ and phase displacement $\beta{}(\omega{})$ functions are derived from $\gamma{}(\omega{})$'s real and imaginary components, as shown above. The only equation remaining is the propagation speed $a(\omega{})$, which is derived from the angular frequency $(radians/s)$ and the phase displacement $(radians/km)$ which gives us a propagation speed in $(km/s)$.
+
+\begin{alignat}{2}
+a(\omega{}) &= \frac{\omega}{\beta{}(\omega{})}
+\end{alignat}
+
+With these equations, all of the plots requested by this assignment can be plotted. They can be found in the following Results section with a discussion of their characteristics in the Conclusion section.
+
+\section{Results}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{zc_magnitude_phase_plots.pgf}
+    \end{center}
+    \caption{Characteristic Impedance ($Z_c$) Magnitude and Phase vs. Frequency Plots}
+    \label{zc_plots}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \input{prop_magnitude_phase_plots.pgf}
+    \end{center}
+    \caption{Propagation Function $e^{-\gamma{}(\omega{})l}$ Magnitude and Phase vs. Frequency Plots}
+    \label{prop_func_plots}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \input{prop_phase_plot_nolog.pgf}
+    \end{center}
+    \caption{Propagation Function $e^{-\gamma{}(\omega{})l}$ Magnitude and Phase vs. Linear Frequency Plot}
+    \label{prop_phase_plot}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \input{attenuation_plots.pgf}
+    \end{center}
+    \caption{Attenuation $\alpha{}(\omega{})$ vs. Frequency Plot}
+    \label{attenuation_plots}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \input{phase_displacement_plots.pgf}
+    \end{center}
+    \caption{Phase Displacement $\beta{}(\omega{})$ vs. Frequency Plot}
+    \label{phase_disp_plots}
+\end{figure}
+\begin{figure}[H]
+    \begin{center}
+        \input{propagation_speed_plots.pgf}
+    \end{center}
+    \caption{Propagation Speed $a(\omega{})$ vs. Frequency Plot}
+    \label{prop_speed_plots}
+\end{figure}
+
+\newpage
+\section{Conclusion}
+
+There are distinct differences between the zero and positive sequences of the characteristic impedance $Z_c(\omega{})$ and propagation function $e^{-\gamma{}(\omega{})l}$. These differences likely arise from path the return current takes. In the zero sequence, the current returns via the ground, and in the positive sequence, the return conductor is another conductor.
+
+For the characteristic impedance, we see that the magnitude of the zero sequence is always higher than that of the positive sequence. This seems intuitive because there would likely be greater losses when the current path is back through ground instead of another conductor. The fact that the two conductors are likely closer together will have an effect on their mutual capacitance and inductance which contributes to their wave propagating properties. At lower frequencies, the magnitude of the characteristic impedance is quite large, which gives a clue as to why power is transmitted in alternating current at 60 Hz, which minimizes the losses on the line.
+
+If we ignore the low frequencies in the phase plot, we see that the zero sequence (return through ground) also has a negative reactance (capacitive) component to it for a large range of its frequencies, whereas the positive sequence (return through another conductor) is almost exclusively dominated by a resistive component. It seems that for 50/60 Hz (the two most common power transmission frequencies), the approximation of using a purely real impedance with no reactances is an appropriate one as the reactive components are small in the frequency dependent model.
+
+When observing the propagation function's magnitude, we see two similar shapes at two different frequencies. The magnitude here represents the attenuation of the wave propagating along the line, and we see that until we hit high frequencies, the attenuation is minimal. Specifically, at 50/60Hz we see very little attenuation, which once more shows how appropriate those frequencies are for power delivery. Eventually, both magnitudes drop off completely to zero as they approach higher frequencies.
+
+The zero and positive sequence propagation function phases represent an almost linear increase in the negative range with different slopes. The phase was plotted with frequency on a linear scale to make this evident, in Figure \ref{prop_phase_plot}. This makes sense, as the phase of the propagation function can also be represented by $\omega{}\tau{}$, where $\tau{}$ is the time it takes for the wave to propagate across the line. Since the propagation speed remains in the same order of magnitude across all frequencies (and very close numerically at higher frequencies), the difference in phase is negligible, manifesting in this linear change. This shows once more that a constant value for $\tau{}$ is a decent approximation for a transmission line model.
+
+Observing the propagation speed in Figure \ref{prop_speed_plots}, we notice that the wave does not travel at the same velocity across all frequencies. This is because the transmission line has frequency-dependent components that define the velocity of the wave traveling across the transmission line. Concretely, our data contains a value for the inductance per unit length that varies with frequency. Since wave velocity is approximately equal to $\frac{1}{\sqrt{L'C'}}$, we see that our velocity will change with frequency as we are computing the velocity with different values of $L'$ at every frequency data point.
+
+This assignment is a good demonstration of how an ideal transmission line model is able to approximate the frequency dependent model. However, there are likely many cases where a frequency dependent model would be necessary to accurately model edge cases, especially in the lower frequencies. It would be interesting to model the transmission line using these parameters and observe an impulse travel across the transmission line and observe the different behaviours when the line is shorted, opened, and matched.
+
+\newpage
+\section{Code Listings and Data}
+
+\subsection{Python Code Listing}
+\label{code-listing-python}
+The following is the code written in Python to perform the calculations derived for this homework assignment as well as generate the plots used in this report. The transmission line parameters were converted to a CSV file which is read in by this Python script.
+\lstinputlisting[language=Python]{assignment4.py}
+
+\end{document}
+

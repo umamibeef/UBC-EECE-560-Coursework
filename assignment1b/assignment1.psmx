@@ -1,0 +1,34 @@
+<Meta name="assignment1">
+  <messagelist>
+    <message status="normal" label="build" scope="assignment1" groupid="100006"><![CDATA[Generating 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment1b\assignment1.gf46\assignment1.map'.]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100014"><![CDATA[The total number of live nodes: 2]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100001"><![CDATA[Non-professional licenses are limited to a single, electrical subsystem. Subsystem splitting has been internally disabled for this simulation.]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="400000"><![CDATA[Time for Compile: 0ms  Make: 0ms]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100015"><![CDATA[Will execute (1): call C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100015"><![CDATA[Will execute (1): call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat"]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100015"><![CDATA[Will execute (2): make -f assignment1.mak]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100015"><![CDATA[Will execute (2): "C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment1b\assignment1.gf46\assignment1.mak.bat"]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100005"><![CDATA[Creating EMTDC executable...]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="0"><![CDATA[C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment1b\assignment1.gf46>call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat" ]]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="100012"><![CDATA[Linking objects and libraries into binary 'assignment1.exe']]></message>
+    <message status="normal" label="build" scope="assignment1" groupid="400000"><![CDATA[Solve Time = 0ms]]></message>
+  </messagelist>
+  <List classid="Settings" />
+  <ViewContext>
+    <Window defn="assignment1:Main" call="0" />
+  </ViewContext>
+  <List classid="View">
+    <View name="Main" zoomlevel="6" scrollx="0" scrolly="0" />
+  </List>
+  <Catalog count="0" />
+  <Output device="EMTDC" version="2010" date="2021/01/24" time="23:07:58.000000">
+    <Domain name="Time" unit="s" mult="0.0" skew="0.0">
+      <Sample rate="10000.0" end="100" />
+    </Domain>
+    <List classid="Analog">
+      <Analog name="Main(0):Current" index="0" id="978023910:0" label="" dim="1" unit="A" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Voltage" index="1" id="255683573:0" label="" dim="1" unit="V" min="-2.0" max="2.0" />
+    </List>
+    <List classid="Digital" />
+  </Output>
+</Meta>

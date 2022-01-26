@@ -1,0 +1,259 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{arydshln} % dash line package for matrices
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+% \usepackage{layouts}
+% \printinunitsof{in}\prntlen{\textwidth}
+\title{Transient Recovery Voltage (TRV) in Circuit Breakers using a Lumped-Circuit Line Model}
+\author{Assignment 2}
+\date{Due: 2021/02/12}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 2 \\ TRV in Circuit Breakers using a Lumped-Circuit Line Model}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+
+This assignment investigates the transient recovery voltage in circuit breakers of a shorted transmission line using a lumped-circuit line model. For this scenario, the short circuit happens at t = 0 s at the end of the transmission line and a breaker exists between the transmission line and the power source. By design, the breaker cannot chop current, so after it has been signaled to open (66.67 ms for this assignment), it waits for current to cross zero before opening. In practice, this would help minimize arcing. This behaviour is modeled in the program for the assignment as well as in PSCAD.
+
+This report will outline how the circuit was modeled and simulated and go over the resulting waveforms using both the custom computer program as well as through PSCAD.
+
+\section{Setup}
+
+In order to provide some background to the results, the following sections outline the derivation of the solutions. Both the hand-implemented as well as the PSCAD solution have their own section. As provided by the assignment directives, the values used for the components are as follows:
+
+\begin{center}
+$\begin{array}{ccc}
+    R_1 = 3\,\Omega & L_1 = 350\,mH & C_1 = 10\,nF \\
+    R_2 = 50\,\Omega & L_2 = 100\,mH & C_2 = 600\,nF
+\end{array}$
+\end{center}
+
+These values are substituted into the hand-implemented simulation into the solution equations and the PSCAD schematic.
+
+\subsection{Hand-Implemented Simulation}
+
+When hand modeling the circuit, a new set of nodes were chosen to better represent the lumped-circuit model. First, the L and C component were discretized into their respective resistance and voltage sources. Current source transformations were then performed on the L and C resistor/voltage source pairs to simplify nodal analysis of the circuit. Figure \ref{hand-setup} shows the breakdown of these steps into the final model consisting of resistances and current sources. In total, five nodal voltages are generated, which will later be renamed to the original numbers to keep in line with the original naming convention.
+
+Using trapezoidal discretization and a subsequent current source transformation, the following history current source equations were generated for each of the four current sources:
+
+\begin{alignat}{2}
+h_{23}(t) &= -\frac{2\,L_{1}\,i_{23}(t - \Delta{}t)+\Delta{}t\,v_{2}(t - \Delta{}t)-\Delta{}t\,v_{3}(t - \Delta{}t)}{2\,L_{1}}\\
+h_{30}(t) &= \frac{2\,C_{1}\,v_{3}(t - \Delta{}t)+\Delta{}t\,i_{30}(t - \Delta{}t)}{\Delta{}t}\\ 
+h_{40}(t) &= \frac{2\,C_{2}\,v_{4}(t - \Delta{}t)+\Delta{}t\,i_{40}(t - \Delta{}t)}{\Delta{}t}\\ 
+h_{50}(t) &= -\frac{2\,L_{2}\,i_{50}(t - \Delta{}t)+\Delta{}t\,v_{5}(t - \Delta{}t)}{2\,L_{2}}
+\end{alignat}
+
+Having the equations retain variables for the component values as well as the time delta allows the resulting solutions to easily simulate different component values and time deltas for experimentation. The Python program substitutes the components values at runtime for the simulation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{schematic.png}
+\caption{Transmission line's equivalent circuit and derivation of discretized components.}
+\label{hand-setup}
+\end{figure}
+
+Once the current source histories are determined, the branch currents, which are required values for calculating the next nodal voltage values, can be calculated using the following relationships:
+
+\begin{alignat}{2}
+i_{23}(t) &= v_{23}(t)/R_{23} - h_{23}(t) \\
+i_{30}(t) &= v_{30}(t)/R_{30} - h_{30}(t) \\
+i_{40}(t) &= v_{40}(t)/R_{40} - h_{40}(t) \\
+i_{50}(t) &= v_{50}(t)/R_{50} - h_{50}(t)
+\end{alignat}
+
+For this exercise, the convention used for currents leaving the node marks them as positive and currents entering the node marks them as negative. Therefore the resulting branch currents are the nodal voltage divided by the branch resistance, minus the discretized component current sources for all branch currents in this circuit.
+
+Finally, we can now calculate the nodal voltage equations using some clever matrix manipulation taught in class. This technique subdivides the usual nodal analysis conductance matrix into four sections, with nodes connected to known voltage sources occupying the outside matrices $\mathbf{G_{AB}}$, $\mathbf{G_{BA}}$, and $\mathbf{G_{BB}}$. This allows us to perform the following operation to obtain our nodal voltage equation vector:
+
+\begin{alignat}{2}
+\left[\mathbf{V_A(t)}\right] &= \left[\mathbf{G_{AA}}\right]^{-1}\left[\mathbf{h_A(t)}\right] - \left[\mathbf{G_{AA}}\right]^{-1}\left[\mathbf{G_{AA}}\right]\left[\mathbf{V_B(t)}\right]
+\end{alignat}
+
+For this implementation, the breaker switch closing and opening has the effect of either connecting or breaking nodes 3 and 4 of the circuit (see Figure \ref{hand-setup} for node numbering). This has the result of generating two different conductance and history matrices. Shown below are both conductance and history matrices used for this circuit's solution:
+
+\begin{alignat}{2}
+  \left[
+  \mathbf{G_{closed}}\right] &= \left[
+      \begin{array}{c;{2pt/2pt}c}
+        \mathbf{G_{AA}} & \mathbf{G_{AB}} \\ \hdashline[2pt/2pt]
+        \mathbf{G_{BA}} & \mathbf{G_{BB}} 
+      \end{array}
+    \right] = \left[
+      \begin{array}{ccc;{2pt/2pt}c}
+        \frac{\Delta{}t}{2\,L_{1}}+\frac{1}{R_{1}} & -\frac{\Delta{}t}{2\,L_{1}} & 0 & -\frac{1}{R_{1}} \\ [6pt]
+        -\frac{\Delta{}t}{2\,L_{1}} & \frac{2\,C_{1}}{\Delta{}t}+\frac{2\,C_{2}}{\Delta{}t}+\frac{\Delta{}t}{2\,L_{1}}+\frac{1}{R_{2}} & -\frac{1}{R_{2}} & 0 \\ [6pt]
+        0 & -\frac{1}{R_{2}} & \frac{\Delta{}t}{2\,L_{2}}+\frac{1}{R_{2}} & 0 \\ [6pt] \hdashline[2pt/2pt]
+        -\frac{1}{R_{1}} & 0 & 0 & \frac{1}{R_{1}}
+      \end{array}
+  \right] \\
+  \left[
+  \mathbf{G_{open}}\right] &= \left[
+      \begin{array}{c;{2pt/2pt}c}
+        \mathbf{G_{AA}} & \mathbf{G_{AB}} \\ \hdashline[2pt/2pt]
+        \mathbf{G_{BA}} & \mathbf{G_{BB}} 
+      \end{array}
+    \right] = \left[\begin{array}{cccc;{2pt/2pt}c} \frac{\Delta{}t}{2\,L_{1}}+\frac{1}{R_{1}} & -\frac{\Delta{}t}{2\,L_{1}} & 0 & 0 & -\frac{1}{R_{1}} \\ [6pt]
+    -\frac{\Delta{}t}{2\,L_{1}} & \frac{2\,C_{1}}{\Delta{}t}+\frac{\Delta{}t}{2\,L_{1}} & 0 & 0 & 0 \\ [6pt]
+    0 & 0 & \frac{2\,C_{2}}{\Delta{}t}+\frac{1}{R_{2}} & -\frac{1}{R_{2}} & 0 \\ [6pt]
+    0 & 0 & -\frac{1}{R_{2}} & \frac{\Delta{}t}{2\,L_{2}}+\frac{1}{R_{2}} & 0 \\ [6pt] \hdashline[2pt/2pt]
+    -\frac{1}{R_{1}} & 0 & 0 & 0 & \frac{1}{R_{1}} \end{array}\right]
+\end{alignat}
+
+\begin{alignat}{2}
+  \left[\mathbf{H_{closed}}\right] &= \left[\begin{array}{c} \mathbf{H_{A}} \\ \hdashline[2pt/2pt] \mathbf{H_{B}} \end{array}\right] = \left[\begin{array}{c} h_{23}(t) \\ -h_{23}(t) + h_{30}(t) + h_{40}(t) \\ h_{50}(t) \\ \hdashline[2pt/2pt] 0 \end{array}\right] \\
+  \left[\mathbf{H_{open}}\right] &= \left[\begin{array}{c} \mathbf{H_{A}} \\ \hdashline[2pt/2pt] \mathbf{H_{B}} \end{array}\right] = \left[\begin{array}{c} h_{23}(t) \\ -h_{23}(t) + h_{30}(t) \\ h_{40}(t) \\ h_{50}(t) \\ \hdashline[2pt/2pt] 0 \end{array}\right]
+\end{alignat}
+
+The resulting nodal voltage equations were generated using MATLAB to minimize algebraic errors; the equations used to generate the nodal voltage equations were saved into a MATLAB file which can be viewed in Listing \ref{code-listing-matlab}. The resulting equations were then ported to a Python script which is provided in Listing \ref{code-listing-python}). There are two sets of nodal voltage solutions, one for the closed breaker and another for the open breaker. The closed breaker solution is used to begin with. Initial conditions are assumed to be zero for all variables. For each time step, the Python script then calculates the next nodal voltage value. These values are then used to calculate the next branch currents. After calculating the branch currents, the Python script checks if the breaker should have activated and if so, checks if the breaker current has changed sign since the last iteration. If both of these conditions are true, the breaker opens, effectively avoiding chopping current, and the open breaker solutions are used to calculate the nodal voltages until the end of the simulation. These results are plotted alongside the equivalent PSCAD solution for comparison using the Python matplotlib plotting library.
+
+\subsection{Choosing a Simulation Time Step}
+
+In order to choose an appropriate $\Delta{}t$ to simulate the circuit with, both sides of the circuit were analyzed for their resonant frequencies. This was performed by the following calculations:
+
+\begin{alignat}{2}
+f_{left} &= \frac{1}{2\pi\sqrt{L_1C_1}} = 2.69\,kHz \\
+f_{right} &= \frac{1}{2\pi\sqrt{L_2C_2}} = 650\,Hz
+\end{alignat}
+
+The higher of the two frequencies, $2.69\,kHz$, corresponds to a period of $372\,\mu{}s$, so in order to get a good simulation result, an order of magnitude higher was chosen, at $\Delta{}t = 10\,\mu{}s$. 10 was chosen because it was a nice even number.
+
+\subsection{PSCAD Simulation}
+
+PSCAD provides a master library of components as well as primitives to help model the circuit. The resulting PSCAD circuit is shown in Figure \ref{pscad-setup}. The "Single Phase Voltage Source Model" component was used as the source and it was made ideal by setting the source impedance to $0 \Omega{}$ with a ramp-up time of $0 s$ (instantaneous voltage). The frequency was set to 60 Hz with a magnitude of $\frac{230}{\sqrt{2}}\,kV_{rms}$ and an offset of 90 degrees to match the assignment's voltage source equation of $230cos(377t)\,kV$. The ideal resistor, inductor, and capacitor were used to model the passive components and a series of voltmeters and ammeters were placed around the circuit to match the hand implemented solution. The voltage and current readings were piped to a plot on the same page as the schematic. In order to determine when PSCAD's breaker opened, the breaker's state variable was observed by plotting its value, and the resulting data is observed for a change that corresponds to an open state. The Python program plots both breaker opening times for the hand-implemented and PSCAD solutions (which turned out to be identical).
+
+Once all of the components were hooked together and instrumented, the build button was clicked. This generated a Fortran program that models the entire circuit. A listing of this program can be found in Section \ref{code-listing-fortran}.
+
+Clicking the run button ran the simulation and outputted the results on the plots. The data was extracted by right-clicking each plot{} to save it to the clipboard. This was then pasted into a CSV file for the Python program to read in as raw values.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5in]{pscad_schematic.png}
+\caption{PSCAD schematic of transmission line.}
+\label{pscad-setup}
+\end{figure}
+
+\section{Simulation}
+
+With the hand-implemented and PSCAD solutions complete, the results can then be simulated and compared. This assignment requests the following comparison plots along with a zoomed-in portion for analysis. The figures following contain all of the plots required for the assignment.
+
+\begin{enumerate}[label=\alph*)]
+  \item Plots of $V_1$, $V_2$, $V_3$ for the simulation and PSCAD (Figures \ref{nodal_v_plots} and \ref{nodal_v_plots_zoom}).
+  \item Plots of $I_{40}$ which represents the short-circuit current at the end of the transmission line (Figures \ref{short_circuit_i_plots} and \ref{short_circuit_i_plots_zoom}).
+  \item Plots of $V_{23}$ which represents the voltage across the breaker (Figures \ref{breaker_v_plots} and \ref{breaker_v_plots_zoom}).
+\end{enumerate}
+
+Plots named simulation refer to the hand-modeled circuit and those named PSCAD refer to the PSCAD modeled circuit. In each plot, the red dashed line represents where the breaker has opened in the solution, which was identical between the hand-simulated and PSCAD solutions.
+
+\begin{figure}[H]
+    \begin{center}
+        \input{nodal_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{1}$, $V_{2}$, and $V_{3}$ nodal voltages}
+    \label{nodal_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{nodal_voltage_comparison_plots_zoom.pgf}
+    \end{center}
+    \caption{Plots of $V_{1}$, $V_{2}$, and $V_{3}$ nodal voltages (zoomed)}
+    \label{nodal_v_plots_zoom}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{breaker_voltage_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $V_{23}$ breaker voltage}
+    \label{breaker_v_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{breaker_voltage_comparison_plots_zoom.pgf}
+    \end{center}
+    \caption{Zoomed plots of $V_{23}$ breaker voltage (zoomed)}
+    \label{breaker_v_plots_zoom}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{short_circuit_current_comparison_plots.pgf}
+    \end{center}
+    \caption{Plots of $I_{40}$ short circuit current}
+    \label{short_circuit_i_plots}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{short_circuit_current_comparison_plots_zoom.pgf}
+    \end{center}
+    \caption{Zoomed plots of $I_{40}$ short circuit current (zoomed)}
+    \label{short_circuit_i_plots_zoom}
+\end{figure}
+
+\section{Conclusion}
+Overall, the hand-implemented solution matched the results generated by PSCAD, with some exceptions. The following are observations and comments from the results of this assignment.
+\begin{itemize}
+    \item Both simulations exhibited instability at the beginning, very likely due to the initial conditions being 0 for all cases. As the simulation steps forward, however, the solutions stabilize fairly quickly.
+    \item Both simulation and PSCAD breakers opened at the same time. This means that the zero crossing detection implemented by the Python simulation was valid and that the simulations followed each other very closely.
+    \item The voltage across the breaker exhibited a ringing voltage wave riding on top of the larger 60 Hz wave. Interestingly enough, in PSCAD's simulation, the ringing attenuated much quicker than the simulation's did. The ringing had a frequency of approximately $2.7\,kHz$, which is very close to the left-hand side's resonant frequency. The abrupt opening of the breaker must have introduced enough noise to excite the left hand side at its resonant frequency.
+    \item PSCAD implemented the breaker differently than the hand-implemented solution. This was discovered after configuring the breaker in PSCAD, which requests the user to specify closed and open resistances. This allows the simulation to retain the same solution matrix, unlike the hand-implemented solution which must switch from one to the other when the breaker state changes. It is possible that the resistance allowed the oscillations a path to dissipate its energy in the PSCAD solution, something that was not possible as quickly through the hand-implemented solution.\
+    \item The left-hand side of the circuit exhibited a resonant frequency of $2.69\,kHz$ compared to the right-hand side's resonant frequency of $650\,Hz$. When the breaker is closed, the circuit as a whole will have a different resonant frequency. This change in resonant frequencies when the breaker opens means that each side will absorb different frequencies. Since breakers will never be perfect, many different harmonic components are introduced when it opens, which will be introduced on either side of the breaker. The new resonant frequencies of either side will therefore absorb/dissipate the most energy at these frequencies. Perhaps this is a consideration for devices connected to either network which may be sensitive to certain frequencies.
+    \item It would be interesting to implement the breaker as PSCAD did (change of breaker branch resistance vs. change of G matrix) to see if the $V_{23}$ voltages can more closely match between the two solutions.
+\end{itemize}
+
+\newpage
+\section{Code Listings and Data}
+
+\subsection{Python Code Listing}
+\label{code-listing-python}
+The following is the code written in Python to perform the calculations derived for this homework assignment as well as generate the plots used in this report. The PSCAD results were saved into a CSV file which the Python script reads in at the start of the program.
+\lstinputlisting[language=Python]{assignment2.py}
+
+\subsection{MATLAB Code Listing}
+\label{code-listing-matlab}
+The following are the equations that were typed into MATLAB to generate the nodal voltage vector solution equations. MATLAB was instrumental in generating the equations the Python script would later use to calculate the iterative solution.
+\lstinputlisting[language=MATLAB]{equations.m}
+
+\subsection{Fortran Code Listing}
+\label{code-listing-fortran}
+The following is the code generated by PSCAD to simulate the circuit for this assignment.
+\lstinputlisting[language=Fortran]{pscad.f}
+\end{document}
+

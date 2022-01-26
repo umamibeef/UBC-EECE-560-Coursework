@@ -1,0 +1,47 @@
+<Meta name="assignment3">
+  <messagelist>
+    <message status="normal" label="build" groupid="100006">
+      <User scope="test" name="Station" status="normal" link="1738898645" /><![CDATA[Generating network and source code 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46\Station.f'.]]></message>
+    <message status="normal" label="build" groupid="100006">
+      <User scope="test" name="Main" status="normal" link="1662088232" /><![CDATA[Generating network and source code 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46\Main.f'.]]></message>
+    <message status="normal" label="build" scope="test" groupid="100006"><![CDATA[Generating 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46\test.map'.]]></message>
+    <message status="normal" label="build" scope="test" groupid="100014"><![CDATA[The total number of live nodes: 2]]></message>
+    <message status="normal" label="build" scope="test" groupid="100001"><![CDATA[Non-professional licenses are limited to a single, electrical subsystem. Subsystem splitting has been internally disabled for this simulation.]]></message>
+    <message status="normal" label="build" scope="test" groupid="400000"><![CDATA[Time for Compile: 47ms  Make: 0ms]]></message>
+    <message status="normal" label="build" scope="test" groupid="100015"><![CDATA[Will execute (1): call C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat]]></message>
+    <message status="normal" label="build" scope="test" groupid="100015"><![CDATA[Will execute (1): call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat"]]></message>
+    <message status="normal" label="build" scope="test" groupid="100015"><![CDATA[Will execute (2): make -f test.mak]]></message>
+    <message status="normal" label="build" scope="test" groupid="100015"><![CDATA[Will execute (2): "C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46\test.mak.bat"]]></message>
+    <message status="normal" label="build" scope="test" groupid="100005"><![CDATA[Creating EMTDC executable...]]></message>
+    <message status="normal" label="build" scope="test" groupid="0"><![CDATA[C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46>call "C:\Program Files (x86)\GFortran\4.6\bin\gf46vars.bat" ]]></message>
+    <message status="normal" label="build" scope="test" groupid="100004"><![CDATA[Compiling 'Station.f' into object code.]]></message>
+    <message status="normal" label="build" scope="test" groupid="100004"><![CDATA[Compiling 'Main.f' into object code.]]></message>
+    <message status="normal" label="build" scope="test" groupid="100012"><![CDATA[Linking objects and libraries into binary 'test.exe']]></message>
+    <message status="normal" label="build" groupid="100010">
+      <Wire scope="test" name="assignment3:bline_1" status="normal" link="745557016" /><![CDATA[Solving transmission segment using 'C:\Users\michel\OneDrive\School\EECE560\2021-assignments\assignment3\test.gf46\bline.tli'.]]></message>
+    <message status="normal" label="build" scope="test" groupid="400000"><![CDATA[Solve Time = 141ms]]></message>
+  </messagelist>
+  <List classid="Settings" />
+  <ViewContext>
+    <Window defn="test:Main" call="0" />
+  </ViewContext>
+  <List classid="View">
+    <View name="Main" zoomlevel="8" scrollx="135" scrolly="0" />
+    <View name="tline_1" zoomlevel="6" scrollx="0" scrolly="0" />
+    <View name="bline" zoomlevel="6" scrollx="0" scrolly="0" />
+    <View name="bline_1" zoomlevel="6" scrollx="0" scrolly="0" />
+  </List>
+  <Catalog count="0" />
+  <Output device="EMTDC" version="2010" date="2021/02/17" time="23:22:41.000000">
+    <Domain name="Time" unit="s" mult="0.0" skew="0.0">
+      <Sample rate="100000.0" end="20000" />
+    </Domain>
+    <List classid="Analog">
+      <Analog name="Main(0):V1" index="0" id="663780842:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V2" index="1" id="52605782:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):V3" index="2" id="608009543:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+      <Analog name="Main(0):Ishort" index="3" id="916880218:0" label="" dim="1" unit="" min="-2.0" max="2.0" />
+    </List>
+    <List classid="Digital" />
+  </Output>
+</Meta>

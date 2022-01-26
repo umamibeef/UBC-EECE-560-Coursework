@@ -1,0 +1,177 @@
+\documentclass[10pt, oneside, letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\usepackage{listings}
+\lstset{
+  backgroundcolor=\color{white}, % choose the background color
+  basicstyle=\footnotesize\ttfamily, % size of fonts used for the code
+  breaklines=true, % automatic line breaking only at whitespace
+  frame=single, % add a frame
+  captionpos=b, % sets the caption-position to bottom
+  commentstyle=\color{mygreen}, % comment style
+  escapeinside={\%*}{*)}, % if you want to add LaTeX within your code
+  keywordstyle=\color{blue}, % keyword style
+  stringstyle=\color{mymauve}, % string literal style
+}
+\usepackage{enumitem}
+\usepackage{blindtext}
+\usepackage{datetime2}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{pgf}
+% \usepackage{layouts}
+% \printinunitsof{in}\prntlen{\textwidth}
+\title{Basic Circuit Discretization}
+\author{Assignment 1a}
+\date{Due: 2021/01/22}
+
+\pagestyle{fancy}
+\setlength{\headheight}{23pt}
+\setlength{\parskip}{1em}
+\fancyhf{}
+\chead{Assignment 1a \\ Basic Circuit Discretization}
+\rhead{Michel Kakulphimp \\ Student \#63542880}
+\lhead{EECE560 \\ UBC MEng}
+\cfoot{\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\section{Introduction}
+In this first assignment, we are analyzing the transient behaviour of a series RL circuit as we close its main switch. Since this circuit and its constituent components can be modeled as an easy-to-solve first order differential equation, this allows us to simultaneously solve for its continuous time solution as well as apply some discretization techniques to enable solving the circuit in a step-by-step manner. Comparing the two allows us to analyze how well each discretization technique is able to approximate the true solution.
+
+The following sections will discuss the derivation of the continuous time function as well as the derivation of the discretized functions. The trapezoidal and backward Euler approximations of a differential equation will be employed for this assignment. Following the derivations, we will plot different the approximations and compare their performance with respect to different time steps as well to each other. The continuous solutions will be overlayed to understand how well the approximations come to solving the circuit's solution.
+
+Finally, a discussion of the results as well as improvements will be proposed. A full code listing of the code used in this project is provided as well for review.
+\section{Setup}
+The following sections go through the derivation of the different solutions used to produce the final plots for this assignment.
+\subsection{Homogeneous Plus Steady-State Solutions}
+In this section, we will derive the homogeneous plus steady-state solutions for $i(t)$ and $v_L(t)$. These solutions will plot the continuous time value for each of the quantities, and will be used as a baseline comparison to see how well the approximations match the ground truth. Using KVL, the circuit can be represented by the following equation:
+\begin{alignat}{2}
+10 - Ri(t) & = L\frac{di(t)}{d(t)}
+\intertext{Solving this first order differential equation will provide the continuous time system solution for $i(t)$ and $v_L(t)$. First, we will derive the continuous time system solution for $i(t)$in terms of homogeneous plus steady-state equations:}
+\frac{10 - Ri(t)}{L} & = \frac{di(t)}{dt} \\
+\frac{dt}{L} & = \frac{di(t)}{10-Ri(t)} \\
+\frac{1}{L}\int{}\,dt & = \int{}\frac{1}{10-R\,i(t)}di(t) \\
+\frac{1}{L}t + K & = -\frac{1}{R}\ln{|10-R\,i(t)|} \\
+e^{-\frac{R}{L}-RK} & = 10 - R\,i(t) \\
+i(t) & = \frac{10}{R} - A\,e^{-\frac{R}{L}t} & A = e^{-RK} \\
+\Aboxed{i(t) & = \frac{10}{R} - A\,e^{-\frac{R}{L}t}}
+\intertext{We know from our initial conditions that $i(0) = 0$; this allows us to solve for the steady-state solution by solving for the constant $A$.}
+0 & = \frac{10}{R} - A\,e^{-\frac{R}{L}(0)} \\
+A & = \frac{10}{R}
+\intertext{This gives us our final, continuous time solution for $i(t)$ as follows:}
+i(t) & =\frac{10}{R} - \frac{10}{R}\,e^{-\frac{R}{L}t} & i(t)=0 \\
+\Aboxed{i(t) & =\frac{10}{R} - \frac{10}{R}\,e^{-\frac{R}{L}t} & i(t)=0}
+\intertext{Obtaining our continuous time $v_L(t)$ relies on the formula for the voltage across an inductor. Since we have obtained our $i(t)$, we can take its derivative with respect to time to obtain the equation's $\frac{di(t)}{dt}$ term.}
+\frac{di(t)}{dt} & = A\,\frac{R}{L}\,e^{-\frac{R}{L}t}
+\intertext{This derivative can then be substituted into the equation for the voltage across our inductor:}
+v_L(t) & = L\,\frac{di(t)}{dt} \\
+\Aboxed{v_L(t) & = A\,R\,e^{-\frac{R}{L}t}}
+\intertext{Knowing our initial conditions, we obtain the following steady-state equation for $v_L(t)$}
+\Aboxed{v_L(t) & = 10\,e^{-\frac{R}{L}t}}
+\end{alignat}
+\subsection{Isolating Components for Discretization}
+In order to apply the trapezoidal and backward Euler discretizations used by the step-by-step solution, we must isolate the integration of $i(t)dt$. This is the component that will be approximated by the following discretization techniques:
+\begin{alignat}{2}
+\intertext{Trapezoidal:}
+\int_{t-\Delta{}t}^{t}i(t)dt & \simeq \frac{i(t)+i(t-\Delta{}t)}{2}\Delta{}t
+\intertext{Backward Euler:}
+\int_{t-\Delta{}t}^{t}i(t)dt & \simeq i(t)\Delta{}t
+\end{alignat}
+The following steps will manipulate our original KVL relationship into a differential equation that can be discretized, isolating the integration of $i(t)dt$.
+\begin{alignat}{2}
+10 - Ri(t) & = L\frac{di(t)}{d(t)} \\
+\frac{10}{L} - \frac{R}{L}i(t) & = \frac{di(t)}{dt} \\
+\frac{10}{L}dt - \frac{R}{L}i(t)dt & = di(t) \\
+\frac{10}{L}\int_{t-\Delta{}t}^{t}dt - \frac{R}{L}\int_{t-\Delta{}t}^{t}i(t)dt & = i(t) - i(t-\Delta{}t) \\
+\frac{10}{L}[t - (t-\Delta{}t)] - \frac{R}{L}\int_{t-\Delta{}t}^{t}i(t)dt & = i(t) - i(t-\Delta{}t) \\
+- \frac{R}{L}\int_{t-\Delta{}t}^{t}i(t)dt & = i(t) - i(t-\Delta{}t) - \frac{10}{L}\Delta{}t \\
+\Aboxed{\int_{t-\Delta{}t}^{t}i(t)dt & = -\frac{L}{R}i(t) + \frac{L}{R}i(t-\Delta{}t) + \frac{10}{R}\Delta{}t}
+\end{alignat}
+With $\int_{t-\Delta{}t}^{t}i(t)dt$ isolated, we can now apply our discretization techniques to obtain our step-by-step solution for the current. Similarly, discretizing $v_L(t)$ can be performed by manipulating the fundamental equation for the voltage across an inductor:
+\begin{alignat}{2}
+v_L(t) & = L\frac{di(t)}{dt} \\
+\int_{t-\Delta{}t}^{t}v_L(t) & = Ldi(t) \\
+\Aboxed{\int_{t-\Delta{}t}^{t}v_L(t) & = L[i(t) - i(t-\Delta{}t)]}
+\end{alignat}
+\subsection{Trapezoidal Discretization}
+The following is the derivation of the step-by-step solution for $i(t)$ and $v_L(t)$ using the trapezoidal discretization technique.
+\begin{alignat}{2}
+\intertext{Current $i(t)$:}
+\frac{i(t)+i(t-\Delta{}t)}{2}\Delta{}t & \simeq -\frac{L}{R}i(t) + \frac{L}{R}i(t-\Delta{}t) + \frac{10}{R}\Delta{}t \\
+i(t)\Delta{}t + i(t-\Delta{}t)\Delta{}t & \simeq \frac{2L}{R}i(t-\Delta{}t)-\frac{2L}{R}i(t) + \frac{20}{R}\Delta{}t \\
+i(t)\Delta{}t + \frac{2L}{R}i(t) & \simeq \frac{2L}{R}i(t-\Delta{}t) - i(t-\Delta{}t)\Delta{}t+20\Delta{}t \\
+\Aboxed{i(t) & \simeq \frac{i(t-\Delta{}t)[2L-R\Delta{}t] + 20\Delta{}t}{R\Delta{}t + 2L}}
+\intertext{Voltage $v_L(t)$:}
+\frac{v_L(t)+v_L(t-\Delta{}t)}{2}\Delta{}t & \simeq L[i(t) - i(t-\Delta{}t)] \\
+\Aboxed{v_L(t) & \simeq \frac{2L}{\Delta{}t}[i(t) - i(t-\Delta{}t)] - v_L(t-\Delta{}t)}
+\end{alignat}
+\subsection{Backward Euler Discretization}
+The following is the derivation of the step-by-step solution for $i(t)$ and $v_L(t)$ using the backward Euler discretization technique.
+\begin{alignat}{2}
+\intertext{Current $i(t)$:}
+i(t)\Delta{}t & \simeq -\frac{L}{R}i(t) + \frac{L}{R}i(t-\Delta{}t) + \frac{10}{R}\Delta{}t \\
+i(t)R\Delta{}t + Li(t) & \simeq  Li(t - \Delta{t}) + 10\Delta{}t \\
+i(t)[R\Delta{}t + L] & \simeq Li(t - \Delta{}t) + 10\Delta{}t \\
+\Aboxed{i(t) & \simeq \frac{Li(t - \Delta{}t) + 10\Delta{}t}{R\Delta{}t + L}}
+\intertext{Voltage $v_L(t)$:}
+v_L(t)\Delta{}t & \simeq L[i(t) - i(t-\Delta{}t)] \\
+\Aboxed{v_L(t) & \simeq \frac{L[i(t) - i(t-\Delta{}t)]}{\Delta{}t}}
+\end{alignat}
+\section{Simulation}
+With the equations derived, we can now plot our results to see how they perform with different parameters. The assignment requests the following solutions to be generated using a computer program:
+\begin{enumerate}[label=\alph*)]
+  \item Using the trapezoidal rule with $\Delta{}t_1 = 0.1ms$
+  \item Using the backward Euler rule with $\Delta{}t_1 = 0.1ms$
+  \item Using the trapezoidal rule with $\Delta{}t_2 = 0.8ms$
+  \item Using the backward Euler rule with $\Delta{}t_2 = 0.8ms$
+\end{enumerate}
+In all plots, the continuous solution is plotted as a dotted line to show what the exact solution should be. This provides a baseline to compare the performance of the different approximations. Figure \ref{trap_approx}. shows the performance of the Trapezoidal approximation using time steps of $0.1ms$ and $0.8ms$. Figure \ref{back_approx}. shows the performance of the backward Euler approximation using time steps of $\Delta{}t_1 = 0.1ms$ and $\Delta{}t_2 = 0.8ms$. Finally, Figure \ref{approx_comp}. compares both approximation techniques using the time step of $\Delta{}t_2 = 0.8ms$.
+
+As expected, the smaller the time step, the closer the step-by-step solutions approximate the real solution. This makes sense because as the $\Delta{}t$ becomes smaller, the closer it becomes to approximating the integration. What was unexpected, however, is the backward Euler solution more closely approximating the solution numerically versus the trapezoidal one. Intuitively, the trapezoidal solution should approximate the solution better due to its inclusion of a triangle area above the square below. The trapezoidal approximation does seem to follow the shape better than the backward Euler one, however. The backward Euler approximation can be seen to cross the true solution towards the end of the simulation in Figure \ref{approx_comp}. whereas the trapezoidal solution asymptotically approaches the true solution. At small time steps the trapezoidal solution is likely the better one.
+\begin{figure}[H]
+    \begin{center}
+        \input{trapezoidal_plots.pgf}
+    \end{center}
+    \caption{Trapezoidal Approximations at $\Delta{}t_1 = 0.1 ms, \Delta{}t_2 = 0.8 ms$}
+    \label{trap_approx}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{backeuler_plots.pgf}
+    \end{center}
+    \caption{Backward Euler Approximations at $\Delta{}t_1 = 0.1 ms, \Delta{}t_2 = 0.8 ms$}
+    \label{back_approx}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{center}
+        \input{compare_plot_0p0008.pgf}
+    \end{center}
+    \caption{Comparison of Approximations at $\Delta{}t_2 = 0.8 ms$}
+    \label{approx_comp}
+\end{figure}
+\section{Conclusion}
+Overall this was a good refresher on transient circuit analysis as well as a productive introduction to discretization techniques. Further optimizations and improvements are proposed below:
+\begin{itemize}
+    \item In order to perform more efficient calculation steps, the program could decide to dynamically modify its solution's step size if it detects the output to be stable. This would allow it to more effectively make use of its compute cycles. A threshold could be implemented to determine the range of change for which it should attempt to modify its step size.
+    \item In a similar vein, the program could also attempt changing its discretization rules on the fly to better approximate the transient solution. Perhaps in some scenarios, a circuit exhibits several different stages where certain approximations work better than others.
+    \item Using a programming language that supports special compiler hints, a program could be written to make use of special processing units that accelerate an approximation's iteration. Perhaps a program could also run multiple discretization rules in parallel, and through some kind of analysis, dynamically switch between the more accurate solution. 
+\end{itemize}
+\newpage
+\section{Code Listing}
+The following is the code written in Python to perform the calculations derived for this homework assignment as well as generate the plots used in this report.
+\lstinputlisting[language=Python]{assignment1a.py}
+	
+\end{document}
+
